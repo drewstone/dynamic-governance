@@ -3,7 +3,7 @@ import constants
 from errors import value_error
 
 
-def social_maximizing_alternative(reports):
+def linear_valuation_vcg(reports):
     # reports are numbers (integers for simplicity)
     max_welfare = 0
     param = 0
@@ -14,20 +14,20 @@ def social_maximizing_alternative(reports):
             max_welfare = (len(reports) - inx) * elt
             param = elt
 
-    return (max_welfare, param)
+    return max_welfare, param
 
 
-def vcg_payments(reports, welfare, alternative):
+def linear_valuation_payments(reports, welfare, alternative):
     payments = []
     for inx, elt in enumerate(sorted(reports)):
         if sorted(reports)[inx] < alternative:
-            payments.append(0)
+            payments.append((0, elt))
         else:
             reports_without_i = copy.deepcopy(reports)
             reports_without_i.remove(elt)
-            (welfare_without_i, param) = social_maximizing_alternative(
+            (welfare_without_i, param) = linear_valuation_vcg(
                 reports_without_i)
-            payments.append(welfare_without_i - (welfare - alternative))
+            payments.append((welfare_without_i - (welfare - alternative), elt))
     return payments
 
 
@@ -50,16 +50,17 @@ class Government(object):
         self.throughput += self.parameter
         # decentralization is increased by nodes with sufficient capacity
         self.decentralization += len(
-            list(filter(lambda r: r != 0, reports)))
+            list(filter(lambda r: r != 0 and r >= self.parameter, reports)))
+
         # move parameter according to majority
-        self.parameter, _ = self.decide(reports)
+        self.parameter, payments = self.decide(reports)
 
         if self.parameter < 0:
             self.parameter = 0
 
         # increment round and return parameter
         self.round += 1
-        return self.parameter
+        return self.parameter, payments
 
     def decide(self, reports):
         if self.decision_type == constants.MAJORITY_VOTE_DECISION:
@@ -80,9 +81,9 @@ class Government(object):
                 return self.parameter + 1
         elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
             # find social welfare maximizing parameter given capacity reports
-            (max_welfare, max_param) = social_maximizing_alternative(reports)
-            print(max_welfare, max_param)
-            payments = vcg_payments(reports, max_welfare, max_param)
+            (max_welfare, max_param) = linear_valuation_vcg(reports)
+            payments = linear_valuation_payments(
+                reports, max_welfare, max_param)
             return max_param, payments
         else:
             value_error("Unsupported decision type: {}", self.decision_type)

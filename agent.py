@@ -34,12 +34,12 @@ class Agent(object):
                     else 1 if self.capacity == parameter
                     else 2)
         elif self.report_type == constants.DIRECT_CAPACITY_REPORT:
-            return 0 if self.capacity < parameter else self.capacity
+            return self.capacity
         else:
             value_error("Unsupported report type {}", self.report_type)
 
     def selfish_report(self, parameter):
         if self.report_type == constants.DIRECT_CAPACITY_REPORT:
-            return 0 if self.capacity < parameter else self.capacity
+            return self.capacity
         else:
             value_error("Unsupported report type {}", self.report_type)

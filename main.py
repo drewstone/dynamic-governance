@@ -9,7 +9,7 @@ if __name__ == "__main__":
     high_capacity = 10
     agent_mode = HONEST_INCREASING_AGENTS
     initial_param = 0
-    num_rounds = 2
+    num_rounds = 10
     report_type = DIRECT_CAPACITY_REPORT
     step_type = ALL_REPORTS
     decision_type = SOCIAL_WELFARE_MAXIMIZING

@@ -60,14 +60,19 @@ class Simulator(object):
                 list(map(lambda agent: agent.capacity, self.agents))))
 
         for i in range(self.num_rounds):
-            self.step()
+            _, payments = self.step()
             if self.logging_mode == constants.DEBUG_LOGGING:
-                print("Round {} | NEW_P = {}, OLD_P = {}, TPS = {}, DEC = {}"
+                print("\nXXX\tRound {} | NEW_P = {}, OLD_P = {}, TPS = {}, DEC = {}\tXXX\n"
                       .format(self.gov.round,
                               self.gov.parameter,
                               self.gov.previous_parameter,
                               self.gov.throughput,
                               self.gov.decentralization))
+
+                if payments:
+                    payment_logs = list(map(lambda p: "Param {} => {}"
+                                            .format(p[1], p[0]), payments))
+                    print("\t\t\tPayments\n" + "\n".join(payment_logs))
 
         self.plot()
 
@@ -92,7 +97,7 @@ class Simulator(object):
             reports = list(map(lambda a: a.report(
                 self.gov.parameter), self.agents))
             # advance round and receive new parameter given reports
-            self.gov.advance_round(reports)
+            return self.gov.advance_round(reports)
         else:
             value_error("Unsupported step type: {}", self.step_type)
 
