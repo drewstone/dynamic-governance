@@ -6,18 +6,18 @@ from errors import value_error
 class Agent(object):
     """An agent represents an atomic participant in a governance simulation"""
 
-    def __init__(self, type, capacity, report_type):
+    def __init__(self, ttype, capacity, report_type):
         super(Agent, self).__init__()
-        self.type = type
+        self.ttype = ttype
         self.capacity = capacity
         self.report_type = report_type
 
     def report(self, parameter):
-        if self.type == constants.RANDOM_AGENT:
+        if self.ttype == constants.RANDOM_AGENT:
             return np.random.choice(self.feasible_reports())
-        if self.type == constants.HONEST_AGENT:
+        if self.ttype == constants.HONEST_AGENT:
             return self.honest_report(parameter)
-        if self.type == constants.SELFISH_AGENT:
+        if self.ttype == constants.SELFISH_AGENT:
             return self.selfish_report(parameter)
 
     def feasible_reports(self):
@@ -43,3 +43,6 @@ class Agent(object):
             return self.capacity
         else:
             value_error("Unsupported report type {}", self.report_type)
+
+    def __str__(self):
+        return "{}".format(self.capacity)

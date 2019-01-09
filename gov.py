@@ -27,6 +27,8 @@ def linear_valuation_payments(reports, welfare, alternative):
             reports_without_i.remove(elt)
             (welfare_without_i, param) = linear_valuation_vcg(
                 reports_without_i)
+            print("Welfare without player {} = {}, chosen param {}".format(
+                elt, welfare_without_i, param))
             payments.append((welfare_without_i - (welfare - alternative), elt))
     return payments
 

@@ -25,6 +25,12 @@ def all_honest_increasing(n, start, report_type):
         increasing_node_capacities(n, start)))
 
 
+def explicit_honest_agents(capacities, report_type):
+    return list(map(
+        lambda val: Agent(constants.HONEST_AGENT, val, report_type),
+        capacities))
+
+
 class Simulator(object):
     def __init__(self, options):
         super(Simulator, self).__init__()
@@ -42,15 +48,28 @@ class Simulator(object):
         # initialize government
         self.gov = Government(options)
 
+        print(options["EXPLICIT_CAPACITIES"])
         if self.agent_mode == constants.HONEST_INCREASING_AGENTS:
-            self.agents = all_honest_increasing(self.num_agents,
-                                                self.low_capacity,
-                                                self.report_type)
+            if len(options["EXPLICIT_CAPACITIES"]) > 0:
+                self.agents = sorted(explicit_honest_agents(
+                    options["EXPLICIT_CAPACITIES"], self.report_type),
+                    key=lambda a: a.capacity)
+            else:
+                self.agents = sorted(all_honest_increasing(self.num_agents,
+                                                           self.low_capacity,
+                                                           self.report_type),
+                                     key=lambda a: a.capacity)
         elif self.agent_mode == constants.HONEST_RANDOM_AGENTS:
-            self.agents = all_honest_random(self.num_agents,
-                                            self.low_capacity,
-                                            self.high_capacity,
-                                            self.report_type)
+            if len(options["EXPLICIT_CAPACITIES"]) > 0:
+                self.agents = sorted(explicit_honest_agents(
+                    options["EXPLICIT_CAPACITIES"], self.report_type),
+                    key=lambda a: a.capacity)
+            else:
+                self.agents = sorted(all_honest_random(self.num_agents,
+                                                       self.low_capacity,
+                                                       self.high_capacity,
+                                                       self.report_type),
+                                     key=lambda a: a.capacity)
         else:
             value_error("Unsupported agent type: {}", self.agent_mode)
 
@@ -96,6 +115,7 @@ class Simulator(object):
             # gather reports for current parameter
             reports = list(map(lambda a: a.report(
                 self.gov.parameter), self.agents))
+
             # advance round and receive new parameter given reports
             return self.gov.advance_round(reports)
         else:
