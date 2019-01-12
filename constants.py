@@ -14,6 +14,8 @@ WEIGHTED_LEADER_ELECTION = 'weighted-leader-election'
 ALL_REPORTS = 'all-reports'
 
 # Decision types
+MEDIAN_REPORT = 'median'
+WEIGHTED_MEDIAN_REPORT = 'weighted-median'
 MAJORITY_VOTE_DECISION = 'majority'
 SOCIAL_WELFARE_MAXIMIZING = 'social-welfare-maximizing'
 
@@ -24,3 +26,4 @@ DIRECT_CAPACITY_REPORT = 'direct-capacity'
 
 # Logging modes
 DEBUG_LOGGING = 'debug'
+MULTI_SIM_LOGGING = 'multi-sim'

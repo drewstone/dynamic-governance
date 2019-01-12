@@ -38,7 +38,6 @@ class Government(object):
         super(Government, self).__init__()
         self.previous_parameter = None
         self.parameter = options["initial_param"]
-        self.report_type = options["report_type"]
         self.decision_type = options["decision_type"]
 
         # initialize government benchmarks and system parameters
@@ -87,5 +86,9 @@ class Government(object):
             payments = linear_valuation_payments(
                 reports, max_welfare, max_param)
             return max_param, payments
+        elif self.decision_type == constants.MEDIAN_REPORT:
+            return reports[len(reports) / 2]
+        elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
+            
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
