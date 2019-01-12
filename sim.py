@@ -25,12 +25,12 @@ class Simulator(object):
         for i in range(self.num_rounds):
             _, payments = self.step()
             if self.logging_mode == constants.DEBUG_LOGGING:
-                print("\nXXX\tRound {} | NEW_P = {}, OLD_P = {}, TPS = {}, DEC = {}\tXXX\n"
-                      .format(self.gov.round,
-                              self.gov.parameter,
-                              self.gov.previous_parameter,
-                              self.gov.throughput,
-                              self.gov.decentralization))
+                print("\nXXX\tRound {} | NEW_P = {}, OLD_P = {}, TPS = {}, " +
+                      "DEC = {}\tXXX\n".format(self.gov.round,
+                                               self.gov.parameter,
+                                               self.gov.previous_parameter,
+                                               self.gov.throughput,
+                                               self.gov.decentralization))
 
                 if payments:
                     payment_logs = list(map(lambda p: "Param {} => {}"
@@ -52,13 +52,19 @@ class Simulator(object):
             distribution = [1.0 * i / weight_sum for i in caps]
             leader_index = np.random.choice(
                 np.arange(0, len(caps), p=distribution))
-            leader = self.agent(leader_index)
+            leader = self.agents[leader_index]
+            return leader.capacity
 
         # elicit reports from all agents
         elif self.step_type == constants.ALL_REPORTS:
             # gather reports for current parameter
             reports = list(map(lambda a: a.report(
                 self.gov.parameter), self.agents))
+
+            # gather weights of agents
+            caps = list(map(lambda a: a.capacity, self.agents))
+            weight_sum = sum(caps)
+            weights = [1.0 * i / weight_sum for i in caps]
 
             # advance round and receive new parameter given reports
             return self.gov.advance_round(reports, weights)

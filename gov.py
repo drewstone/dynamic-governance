@@ -1,6 +1,7 @@
 import copy
 import constants
 from errors import value_error
+import statistics
 
 
 def linear_valuation_vcg(reports):
@@ -63,7 +64,7 @@ class Government(object):
         self.round += 1
         return self.parameter, payments
 
-    def decide(self, reports):
+    def decide(self, reports, weights):
         if self.decision_type == constants.MAJORITY_VOTE_DECISION:
             # count votes of all participants based on capacity
             lost_count = len(list(filter(lambda r: r == 0, reports)))
@@ -89,6 +90,6 @@ class Government(object):
         elif self.decision_type == constants.MEDIAN_REPORT:
             return reports[len(reports) / 2]
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
-            
+            return statistics.wtd_median(reports, weights)
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
