@@ -65,11 +65,11 @@ if __name__ == "__main__":
 
     agents = setup_agents(agent_options)
     initial_param = 0
-    num_rounds = 2
+    num_rounds = int(np.ceil(np.log(11))) + 1
     step_type = constants.ALL_REPORTS
     decision_type = [
-        # constants.SOCIAL_WELFARE_MAXIMIZING,
-        constants.MEDIAN_REPORT
+        constants.SOCIAL_WELFARE_MAXIMIZING,
+        # constants.MEDIAN_REPORT
     ]
 
     logging_mode = constants.DEBUG_LOGGING
