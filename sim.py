@@ -21,16 +21,16 @@ class Simulator(object):
         if self.logging_mode == constants.DEBUG_LOGGING:
             print("Agents = {}".format(
                 list(map(lambda agent: agent.capacity, self.agents))))
+            print("Starting parameter: {}".format(self.gov.parameter))
 
         for i in range(self.num_rounds):
             _, payments = self.step()
             if self.logging_mode == constants.DEBUG_LOGGING:
-                print("\nXXX\tRound {} | NEW_P = {}, OLD_P = {}, TPS = {}, " +
-                      "DEC = {}\tXXX\n".format(self.gov.round,
-                                               self.gov.parameter,
-                                               self.gov.previous_parameter,
-                                               self.gov.throughput,
-                                               self.gov.decentralization))
+                print("\nXXX\tRound {} | NEW_P = {}, TPS = {}, DEC = {}\tXXX\n"
+                      .format(self.gov.round,
+                              self.gov.parameter,
+                              self.gov.throughput,
+                              self.gov.decentralization))
 
                 if payments:
                     payment_logs = list(map(lambda p: "Param {} => {}"

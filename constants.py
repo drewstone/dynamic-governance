@@ -15,6 +15,8 @@ ALL_REPORTS = 'all-reports'
 
 # Decision types
 MEDIAN_REPORT = 'median'
+LOWER_MEDIAN_REPORT = 'lower-median'
+UPPER_MEDIAN_REPORT = 'upper-median'
 WEIGHTED_MEDIAN_REPORT = 'weighted-median'
 MAJORITY_VOTE_DECISION = 'majority'
 SOCIAL_WELFARE_MAXIMIZING = 'social-welfare-maximizing'

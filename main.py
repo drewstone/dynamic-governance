@@ -55,26 +55,28 @@ def setup_agents(options):
 
 if __name__ == "__main__":
     agent_options = {
-        "num_agents": 10,
+        "num_agents": 11,
         "low_capacity": 5,
         "high_capacity": 100,
         "agent_mode": constants.HONEST_RANDOM_AGENTS,
         "capacities": [],
+        "report_type": constants.DIRECT_CAPACITY_REPORT,
     }
 
     agents = setup_agents(agent_options)
-
     initial_param = 0
     num_rounds = 2
-    report_type = [constants.DIRECT_CAPACITY_REPORT]
     step_type = constants.ALL_REPORTS
-    decision_type = [constants.SOCIAL_WELFARE_MAXIMIZING,
-                     constants.MEDIAN_REPORT]
+    decision_type = [
+        # constants.SOCIAL_WELFARE_MAXIMIZING,
+        constants.MEDIAN_REPORT
+    ]
+
     logging_mode = constants.DEBUG_LOGGING
 
     for d_type in decision_type:
         sim = Simulator({
-            "agent": agents,
+            "agents": agents,
             "num_rounds": num_rounds,
             "initial_param": initial_param,
             "step_type": step_type,

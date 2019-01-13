@@ -46,7 +46,7 @@ class Government(object):
         self.decentralization = 0
         self.round = 0
 
-    def advance_round(self, reports):
+    def advance_round(self, reports, weights):
         self.previous_parameter = self.parameter
         # throughput is increased by previous rounds parameter
         self.throughput += self.parameter
@@ -55,7 +55,7 @@ class Government(object):
             list(filter(lambda r: r != 0 and r >= self.parameter, reports)))
 
         # move parameter according to majority
-        self.parameter, payments = self.decide(reports)
+        self.parameter, payments = self.decide(reports, weights)
 
         if self.parameter < 0:
             self.parameter = 0
@@ -76,11 +76,11 @@ class Government(object):
             majority_index = temp_arr.index(max(temp_arr))
 
             if majority_index == 0:
-                return self.parameter - 1
+                return self.parameter - 1, None
             if majority_index == 1:
-                return self.parameter
+                return self.parameter, None
             else:
-                return self.parameter + 1
+                return self.parameter + 1, None
         elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
             # find social welfare maximizing parameter given capacity reports
             (max_welfare, max_param) = linear_valuation_vcg(reports)
@@ -88,8 +88,26 @@ class Government(object):
                 reports, max_welfare, max_param)
             return max_param, payments
         elif self.decision_type == constants.MEDIAN_REPORT:
-            return reports[len(reports) / 2]
+            if len(reports) % 2 == 0:
+                median = 0.5 * \
+                    (reports[int(len(reports) / 2) - 1] +
+                     reports[int(len(reports) / 2)])
+            else:
+                median = reports[int(len(reports) / 2)]
+
+            return median, None
+        elif self.decision_type == constants.LOWER_MEDIAN_REPORT:
+            if len(reports) % 2 == 0:
+                median = reports[int(len(reports) / 2) - 1]
+            else:
+                median = reports[int(len(reports) / 2)]
+
+            return median, None
+        elif self.decision_type == constants.UPPER_MEDIAN_REPORT:
+            median = reports[int(len(reports) / 2)]
+            return median, None
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
-            return statistics.wtd_median(reports, weights)
+            w_median = int(statistics.wtd_median(reports, weights))
+            return w_median, None
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
