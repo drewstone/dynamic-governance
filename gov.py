@@ -1,58 +1,25 @@
-import copy
+import vcg
 import constants
 from errors import value_error
 import statistics
-
-
-def linear_valuation_vcg(reports):
-    # reports are numbers (integers for simplicity)
-    max_welfare = 0
-    param = 0
-
-    # find social welfare maximizing parameter given capacity reports
-    for inx, elt in enumerate(sorted(reports)):
-        if (len(reports) - inx) * elt > max_welfare:
-            max_welfare = (len(reports) - inx) * elt
-            param = elt
-
-    return max_welfare, param
-
-
-def linear_valuation_payments(reports, welfare, alternative):
-    payments = []
-    for inx, elt in enumerate(sorted(reports)):
-        if sorted(reports)[inx] < alternative:
-            payments.append((0, elt))
-        else:
-            reports_without_i = copy.deepcopy(reports)
-            reports_without_i.remove(elt)
-            (welfare_without_i, param) = linear_valuation_vcg(
-                reports_without_i)
-            print("Welfare without player {} = {}, chosen param {}".format(
-                elt, welfare_without_i, param))
-            payments.append((welfare_without_i - (welfare - alternative), elt))
-    return payments
 
 
 class Government(object):
     def __init__(self, options):
         super(Government, self).__init__()
         self.previous_parameter = None
-        self.parameter = options["initial_param"]
+        self.initial_param = options["initial_param"]
+        self.parameter = self.initial_param
         self.decision_type = options["decision_type"]
+        self.utility_type = options["utility_type"]
 
-        # initialize government benchmarks and system parameters
-        self.throughput = 0
-        self.decentralization = 0
+        if self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
+            self.VCG = vcg.VCGMechanism(self.utility_type)
+
         self.round = 0
 
     def advance_round(self, reports, weights):
         self.previous_parameter = self.parameter
-        # throughput is increased by previous rounds parameter
-        self.throughput += self.parameter
-        # decentralization is increased by nodes with sufficient capacity
-        self.decentralization += len(
-            list(filter(lambda r: r != 0 and r >= self.parameter, reports)))
 
         # move parameter according to majority
         self.parameter, payments = self.decide(reports, weights)
@@ -83,9 +50,9 @@ class Government(object):
                 return self.parameter + 1, None
         elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
             # find social welfare maximizing parameter given capacity reports
-            (max_welfare, max_param) = linear_valuation_vcg(reports)
-            payments = linear_valuation_payments(
-                reports, max_welfare, max_param)
+            (max_welfare, max_param) = self.VCG.select(reports)
+            # get payments for strategy-proofness
+            payments = self.VCG.payments(reports, max_welfare, max_param)
             return max_param, payments
         elif self.decision_type == constants.MEDIAN_REPORT:
             if len(reports) % 2 == 0:
@@ -111,3 +78,7 @@ class Government(object):
             return w_median, None
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
+
+    def reset(self):
+        self.round = 0
+        self.parameter = self.initial_param

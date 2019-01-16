@@ -8,6 +8,10 @@ RANDOM_AGENT = 'random'
 BYZANTINE_AGENT = 'byzantine'
 SELFISH_AGENT = 'selfish'
 
+# Agent utility types
+LINEAR_UTILITY = 'linear'
+PROPORTIONAL_UTILITY = 'proportional'
+
 # Step types
 UNIFORM_LEADER_ELECTION = 'uniform-leader-election'
 WEIGHTED_LEADER_ELECTION = 'weighted-leader-election'

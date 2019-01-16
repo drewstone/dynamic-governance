@@ -65,22 +65,26 @@ if __name__ == "__main__":
 
     agents = setup_agents(agent_options)
     initial_param = 0
-    num_rounds = int(np.ceil(np.log(11))) + 1
+    num_rounds = 5 * (int(np.ceil(np.log(11))) + 1)
+    num_times = 100
     step_type = constants.ALL_REPORTS
     decision_type = [
         constants.SOCIAL_WELFARE_MAXIMIZING,
         # constants.MEDIAN_REPORT
     ]
+    utility_type = constants.LINEAR_UTILITY
 
-    logging_mode = constants.DEBUG_LOGGING
+    logging_mode = constants.MULTI_SIM_LOGGING
 
     for d_type in decision_type:
         sim = Simulator({
             "agents": agents,
             "num_rounds": num_rounds,
+            "num_times": num_times,
             "initial_param": initial_param,
             "step_type": step_type,
             "decision_type": d_type,
+            "utility_type": utility_type,
             "logging_mode": logging_mode,
         })
 

@@ -75,3 +75,12 @@ def wtd_median(data, wt):
     spots = wp(data, wt, [0.5])
     assert len(spots) == 1
     return spots[0]
+
+
+def sample_proportional_to_capacity(agents):
+    caps = list(map(lambda a: a.capacity, agents))
+    weight_sum = sum(caps)
+    distribution = [1.0 * i / weight_sum for i in caps]
+    leader_index = np.random.choice(
+        np.arange(0, len(caps)), p=distribution)
+    return agents[leader_index]
