@@ -28,7 +28,6 @@ class VCGMechanism(object):
                 reports_without_i.remove(elt)
                 (welfare_without_i, param) = self.select(reports_without_i)
 
-                # TODO: Fix the right hand term summation
                 if self.utility_type == constants.LINEAR_UTILITY:
                     payments.append((welfare_without_i -
                                      welfare -
