@@ -23,7 +23,7 @@ LOWER_MEDIAN_REPORT = 'lower-median'
 UPPER_MEDIAN_REPORT = 'upper-median'
 WEIGHTED_MEDIAN_REPORT = 'weighted-median'
 MAJORITY_VOTE_DECISION = 'majority'
-SOCIAL_WELFARE_MAXIMIZING = 'social-welfare-maximizing'
+SOCIAL_WELFARE_MAXIMIZING = 'vcg'
 
 # Report types
 DIRECTIONAL_REPORT = 'directional'

@@ -8,8 +8,7 @@ class Government(object):
     def __init__(self, options):
         super(Government, self).__init__()
         self.previous_parameter = None
-        self.initial_param = options["initial_param"]
-        self.parameter = self.initial_param
+        self.parameter = options["initial_param"]
         self.decision_type = options["decision_type"]
         self.utility_type = options["utility_type"]
 
@@ -78,7 +77,3 @@ class Government(object):
             return w_median, None
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
-
-    def reset(self):
-        self.round = 0
-        self.parameter = self.initial_param
