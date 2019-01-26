@@ -70,14 +70,14 @@ class Simulator(object):
 
                 # increment throughput based on leader election
                 if leader.capacity < parameter:
-                    self.history[t_key] += 0
+                    increment = 0
                 else:
-                    self.history[t_key] += parameter
+                    increment = parameter
 
                 if r_key in self.history:
-                    self.history[r_key].append(self.history[t_key])
+                    self.history[r_key].append(increment)
                 else:
-                    self.history[r_key] = [self.history[t_key]]
+                    self.history[r_key] = [increment]
 
             # if nodes dropout based on parameter selection
             if self.dropout:
