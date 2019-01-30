@@ -69,15 +69,18 @@ def get_agent_reports(agents):
     return list(map(lambda a: (a.capacity, a.hash_power), agents))
 
 
+# run simulation a bunch of times
 for t in range(100):
-    agents = random_node_capacities(10, 10, 100)
+    # sample random node capacities
+    agents = random_node_capacities(100, 10, 100)
+    # get reports from agents
     reports = get_agent_reports(agents)
-    (max_cap, value) = maximize_obj(reports)
-
+    # find maximizing capacity
+    (max_cap, _) = maximize_obj(reports)
+    # logging
     print("Run {}".format(t))
-    print("Max cap {}, value {}".format(max_cap, value))
-
-    # test misreporting below for all agents below
+    print("Max cap {}".format(max_cap))
+    # test misreporting above and below for all agents below
     for inx, a in enumerate(agents):
         # agents whose capacity is above or below may be
         # able to affect outcome by misreporting below
@@ -92,8 +95,8 @@ for t in range(100):
                 (new_max_cap, new_values) = maximize_obj(new_reports)
 
                 if new_max_cap != max_cap:
-                    print("New max cap: {} with {} deviating with capacity {}".format(
-                        new_max_cap, a.capacity, new_capacity))
+                    str = "New max cap: {} with {} deviating with capacity {}"
+                    print(str.format(new_max_cap, a.capacity, new_capacity))
 
             ctr = 1
             while a.capacity + ctr < a.capacity + 20:
@@ -104,6 +107,6 @@ for t in range(100):
                 (new_max_cap, new_values) = maximize_obj(new_reports)
 
                 if new_max_cap != max_cap:
-                    print("New max cap: {} with {} deviating with capacity {}".format(
-                        new_max_cap, a.capacity, new_capacity))
+                    str = "New max cap: {} with {} deviating with capacity {}"
+                    print(str.format(new_max_cap, a.capacity, new_capacity))
     print("")
