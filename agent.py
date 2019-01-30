@@ -10,6 +10,7 @@ class Agent(object):
         super(Agent, self).__init__()
         self.ttype = ttype
         self.capacity = capacity
+        self.hash_power = 3 * capacity
         self.report_type = report_type
 
     def report(self, parameter):
