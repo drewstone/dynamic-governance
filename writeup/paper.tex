@@ -1,0 +1,288 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{titling}
+\usepackage{float}
+\usepackage{mathtools}
+\usepackage{tabularx}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\theoremstyle{definition}
+\newtheorem{example}{Example}[section]
+
+\newtheorem{xca}[theorem]{Exercise}
+
+\newtheorem{remark}[theorem]{Remark}
+
+\setlength{\abovedisplayskip}{5pt}
+\setlength{\belowdisplayskip}{5pt}
+\setlength{\abovedisplayshortskip}{5pt}
+\setlength{\belowdisplayshortskip}{5pt}
+
+\renewcommand*{\Affilfont}{\normalsize\normalfont}
+\renewcommand*{\Authfont}{\bfseries}
+
+\newcounter{protocol}
+\newenvironment{protocol}[1]
+  {\par\addvspace{\topsep}
+   \noindent
+   \tabularx{\linewidth}{@{} X @{}}
+    \hline
+    \refstepcounter{protocol}\textbf{Protocol \theprotocol} #1 \\
+    \hline}
+  { \\
+    \hline
+   \endtabularx
+   \par\addvspace{\topsep}}
+
+\newcommand{\sbline}{\\[.5\normalbaselineskip]}% small blank line
+
+\title{Algorithmic Governance Design for Cryptocurrency Protocols}
+
+\author{Drew Stone}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+We tryna do adaptive, autonomous governance yo.
+\end{abstract}
+\section{Introduction}
+Governance is a topic that spans numerous fields like political science, economics, and, for our matter, computer science. In the world of blockchains, governance is the topic that embodies how cryptocurrencies evolve and grow. Participants act in a variety of ways according to ever-changing incentives according to a mechanism that defines the feasible set of actions. Oftentimes, blockchain governance garners dogmatic behavior from maximalists of different currencies, who flout the benefits of certain governance structures. In this paper, we discuss this and try to ascertain whether this behavior carries any weight when designing incentivized technology. We systematically build governance mechanisms using tools from algorithmic game theory, mechanism design, and computer science. Specifically, we formalize a number of governance objectives and solve them using distributed optimization techniques.
+
+\section{Background}
+Blockchain governance in the context of this paper describes the set of interactive mechanisms that control a cryptocurrency protocol's evolution. For example, in existing blockchains, miners or validators selectively decide which transactions to process by selecting the highest-paying transactions (or none at all). In other protocols, miners and validators decide how large blocks should be within certain ranges. The mechanisms available to these agents largely define the dynamics of the underlying protocol.
+
+For settings such as these, we, as the mechanism designers, want to build a governance mechanism for blockchain protocols that optimize certain properties. First and foremost is defining the mechanism designer's goal.
+
+\begin{definition}
+A \textit{blockchain governance mechanism designer} $\mathcal{M}(\mathcal{P})$ is primarily concerned with finding a feasible policy $\pi^*\in \Pi_f$ over the system's state $s\in \mathcal{S}$ that maximizes the following quantities:
+\begin{itemize}
+    \item The throughput or transactions per second (\text{\fontfamily{lmss}\selectfont tps}) of the protocol $\mathcal{P}$.
+
+    \item The decentralization (\text{\fontfamily{lmss}\selectfont dec}) of the protocol $\mathcal{P}$.
+\end{itemize}
+\end{definition}
+\begin{proposition}
+$\mathcal{M}(\mathcal{P})$ is concerned with finding a policy $\pi^*\in \Pi_f$ for any state $s\in\mathcal{S}$ that optimizes an objective function $\varphi$ of the quantities above:
+\begin{align*}
+    \pi^*(s) \in \argmax_{\pi \in \Pi_f}
+    \varphi(\text{\fontfamily{lmss}\selectfont tps($\mathcal{P}(\pi))$}, \text{\fontfamily{lmss}\selectfont dec($\mathcal{P}(\pi))$})
+\end{align*}
+\end{proposition}
+Previous work \cite{previous work} has shown that increasing the throughput of many protocols leads to both a decrease in security and decentralization. This is due largely in the heterogeneity of participants in the protocol who will fail to keep up with higher throughput demand. As a result, less participants secure the information contained in the ledger and the network becomes more susceptible to malicious attacks such as 51\% attacks.
+
+While much of the research in the blockchain space has focused on building protocols whose tradeoff between throughput and decentralization is less severe along any axis, none of the research has tried to optimize the governance policy utilized for balancing any such tradeoff. By casting the protocol designer's objective as a multi-objective optimization problem, any interested designer can select the tradeoff within the hyperparameters of the model. Therefore, finding an optimal policy for a given set of hyperparameters remains the main goal.
+
+\section{A model for governance mechanisms}
+\begin{definition}
+We define a blockchain protocol $\mathcal{P}$ over an abstract state space $B$ to be a tuple $\langle \mathcal{V}, \mathcal{O}, P, \pi, \mathcal{R}\rangle$ such that at any round $t$ there exists the following:
+\begin{itemize}
+    \item A set of $n$ active nodes $V\subseteq \mathcal{V}$.
+    \item A leader election oracle $\mathcal{O}(V)$ with distribution $\mathcal{D}$.
+    \item A payment rule $P:B^n\longrightarrow \mathbb{R}^n$.
+    \item A governance rule $\pi:B^n\longrightarrow \mathcal{A}$ where $\mathcal{A}$ denotes the set of alternatives.
+    \item A reward $\mathcal{R}$ for the leader elected at each round.
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+A \textit{miner, validator, node} or \textit{agent} $i\in V$ is a participant of a blockchain protocol with the following properties and responsibilities:
+\begin{itemize}
+    \item $i$ has some probability of being selected to mine a block $\mathcal{O}(i)\in [0,1]$ such that $\sum_{i\in V}\mathcal{O}(i) = 1$.
+    \item $i$ has private, local information $b_i\in B$.
+    \item $i$ has a valuation function over alternatives $v_i: \mathcal{A}\longrightarrow \mathbb{R}$.
+    \item $i$ has some utility $\forall \textbf{b}=(b_1,\cdots,b_n)\in B^n$ defined with respect to a given payment and governance rule.
+    \begin{align*}
+        u_i(\pi(\textbf{b}),P(\textbf{b})) = \mathcal{R}\cdot\textbf{I}[\mathcal{O}(V)=i] + v_i(\pi(\textbf{b})) - P(\textbf{b})_i
+    \end{align*}
+    \textit{We use the subscript $i$ notation over vectors to denote the value at the $i$'th index of the vector.}
+\end{itemize}
+\end{definition}
+
+\subsubsection{Ideal functionality}
+\begin{definition}
+We call $\mathcal{P}$ \textit{incentive-compatible} if $\forall i\in V$ with private state $\textbf{b}\in B^n,~\forall b'\in B$, the following holds:
+\begin{align*}
+    \mathbb{E}[u_i(\pi(\textbf{b}), P(\textbf{b}))] \geq \mathbb{E}[u_i(\pi(b',\textbf{b}_{-i}), P(b', \textbf{b}_{-i}))]
+\end{align*}
+\textit{i.e. for any reports of private states, a node always maximizes its expected utility by reporting its true private state when all other agents do so as well.}
+\end{definition}
+\begin{definition}
+We call $\mathcal{P}$ \textit{individually-rational} if $\forall i\in V$ with private state $\textbf{b}\in B^n$, the following holds:
+\begin{align}
+    \mathbb{E}[u_i(\pi(\textbf{b}), P(\textbf{b}))] \geq 0
+\end{align}
+\end{definition}
+
+As is typical with mechanism design, our ideal functionality is an incentive compatible and individually rational protocol $\mathcal{P}$. We could also strive for budget-balanced or feasible mechanisms, defined as never running a deficit with respect to payments, but we have access to a monetary minting process that provides new functionality than traditionally available. We gloss over this concept primarily because a blockchain protocol allows us to mint a quantity $\mathcal{R}$ of money each round. Therefore, it is not unreasonable to imagine the mechanism using inflationary processes to balance incentives with payment rules that incur deficits.
+
+\subsubsection{A taxonomy of governance rules}
+\begin{definition}
+We call $\pi$ a \textit{constant} governance rule if at each round $t$ and $\forall \textbf{b}\in B^n$, $\pi$ always outputs the same alternative $a\in \mathcal{A}$:
+\begin{align*}
+    \pi(\textbf{b}) = a
+\end{align*}
+\end{definition}
+This describes the governance mechanism of Bitcoin since it requires a hard fork--through a new mechanism--to change the fixed alternative/block size chosen. There is no adaptability to different environments and as such presents both interesting and contentious discussion in different ecosystems.
+\begin{definition}
+We call $\pi$ a \textit{leader-based} governance rule if at each round $t$ and $\forall \textbf{b}\in B^n$, $\pi$ always outputs the alternative signalled by the chosen leader:
+\begin{align*}
+    \pi(\textbf{b}) &= b_{i}\text{ such that }i = \mathcal{O}(V)
+\end{align*}
+\textit{i.e. the governance rule selects the information/alternative signalled by the elected leader $\mathcal{O}(V)$. For simplicity, let $\mathcal{A}=B$ so that leaders bid for their desired future alternatives. If leaders are rational or "selfish" then we get that:}
+\begin{align*}
+\pi(\textbf{b}) = a^*\text{ such that }a^* \in \argmax_{a\in \hat{\mathcal{A}}} v_i(a)
+\end{align*}
+\textit{where $\hat{\mathcal{A}}$ denotes the feasible alternative set according to some globally known restriction.}
+\end{definition}
+In Ethereum for example, the miner $i$ that wins the proof of work process can set the next block gas limit within some bounded range with respect to the previous block's gas limit, usually 0.1\% higher or lower. Therefore, this is analogous to a protocol $\mathcal{P}$ receiving the vector $(\_,\dots,b_i,\dots,\_,)$ where the $i$'th entry corresponds to miner $i$ participating in the protocol. While we abuse notation since in proof of work blockchains we don't exactly know how many miners are participating, it is sufficient that we know there is some number $n$ of participants as described in the mechanism and only one is elected as a leader each round.
+\begin{definition}
+We call $\pi$ a \textit{social-welfare maximizing} governance rule if at each round $t$ and $\forall \textbf{b}\in B^n$, $\pi$ always outputs an alternative that maximizes (resp. minimizes) the valuations (resp. costs) of all participants:
+\begin{align*}
+    \pi(\textbf{b}) &= a^*\text{ such that } a^*\in \argmax_{a\in \hat{\mathcal{A}}} \sum_{i\in V} v_i(a)
+\end{align*}
+\end{definition}
+\section{Single Parameter Governance}
+We begin our search for \textit{incentive-compatible} blockchain protocols over single parameter governance rules where $\mathcal{A}=\mathbb{R}$ or $\mathbb{Z}$. Single parameter governance rules are useful for determining parameters such as a block size or a block gas limit each round. Additionally, we are interested in mechanisms that incentivize truthfulness of reporting private state.
+
+\subsubsection{Single peaked preferences}
+We consider a model where agents have single peaked preferences over alternatives $a\in \mathcal{A}$ with the following structure:
+\begin{align*}
+v_i(a) \begin{cases} 
+      a & a\leq b_i \\
+      0 & otherwise
+   \end{cases}
+\end{align*}
+\begin{definition}
+For each agent $i\in V$, the value $b_i$ as used above is known as the \textit{bliss point}. We will often describe the agent's \textit{bliss point} as their \textit{tolerance} or \textit{capacity}.
+\end{definition}
+
+Since agents have single-peaked utilities at the bliss points $\textbf{b} = (b_1,\dots, b_{|V|})$, we can consider the agents in sorted order by their points: $b_1\leq b_2\leq \dots\leq b_{|V|}$. Oftentimes, we represent bold-faced variables such as \textbf{b} and \textbf{v} as sets (in most cases ordered), so that an agent $i$'s report $b_i\in \textbf{b}$ and valuation $v_i\in\textbf{v}$.
+
+\subsection{Mechanisms without dropout}
+We start by considering a model with the following premise: if the current parameter is $\hat{b}$, any agent $i\in V$ with bliss point $b_i< \hat{b}$ does not drop out of the mechanism. They still provide their bids, albeit earning no positive utility.
+\subsubsection{Median Mechanisms}
+Given single-peaked preferences over alternatives, a natural thing to analyze is the median mechanism, which chooses the alternative denoted by the median bliss point over a set of agents or voters $V$. This immediately leads us to our first mechanism and the following proposition:
+
+\begin{theorem}[\textbf{Moulin 1980}]
+The Median mechanism over single-peaked preferences \textbf{v} that selects the median bliss point $b_{median}$ is truthful and Pareto-efficient.
+\end{theorem}
+% \begin{proof}
+% Using a plurality voting protocol, where agents vote for a single alternative, the median alternative chosen coincides with the median bliss point and bliss points are reported truthfully as follows.
+
+% Consider a voter $i$ whose bliss point $b_i<b_{median}$, i.e. voter $i$ falls on the left of voter $median$ according to the order of \textbf{b}. The only way for $i$ to manipulate the vote is by reporting $\hat{b}_i > b_{median}$ since anything different but still to the left of $b_{median}$ will result in the same median. However, if $i$ reports, untruthfully, a value greater than $b_{median}$ it will increase the median, leading to a weakly worse-off outcome since $v_i(a)=0,~\forall a> b_i$. The same argument proves truthfulness in the reverse direction and so we have truthfulness. The median is also Pareto-efficient from this analysis, since any change in a vote that might make one voter better off, certainly makes another voter worse off.
+
+% Instead of a plurality voting protocol, we can also consider a majority voting protocol over the entire preference profiles of reporters. Given a feasible, ordered set of alternatives $\textbf{a}=\{a_1,\cdots, a_k\}\subseteq \mathcal{A}$ such that $\textbf{b}\subseteq \textbf{a}$, for each agent $i\in V$, we can represent their preferences as
+% $$
+% v_i(a_{i_1}) \preceq v_i(a_{i_2}) \preceq \cdots \preceq v_i(b_i)
+% $$
+% Then since \textbf{b} is ordered, the median reporter's preference profile restricted to \textbf{b} looks like the following. Let $m$ denote the index of the \textit{median} reporter.
+% $$
+% v_{m}(b_{m+1}) \preceq v_{m}(b_{m+2}) \preceq \cdots \preceq v_{m}(b_{m})
+% $$
+% From single-peakedness, we know $v(b_{m+i})=0,~\forall i>0$. We also know that each reporter of index $m+i,~\forall i > 0$ prefers $b_m$ to any lower bliss point. Therefore, the median report $b_m$ has the majority of votes according to the preference profiles of all reporters; that is, the median receives at least half the votes, coinciding with exactly half the votes when all bliss points are distinct. 
+% \end{proof}
+
+Contrary to median mechanisms in other domains \cite{DBLP:journals/corr/BlumrosenD16}, the median mechanism may perform very poorly under certain distributions of bliss point vectors or player capacities. This occurs when the capacity of a single agent far outweighs the capacity of the rest of the agents. Therefore, while the median ensures the number of players with non-zero utility is at least half and that they report truthfully, it does not guarantee that any approximation to optimal social welfare under any distribution.
+
+\begin{proposition}
+There exist distributions $\mathcal{D}$ over bliss points \textbf{b} such that the Median mechanism is not a 2-approximation of optimal social welfare.
+\end{proposition}
+\begin{proof}
+Given a bliss point vector \textbf{b} = $\{1,2,k\},~\forall k > 8$, the median mechanism does substantially worse than $\frac{1}{2}$ the optimal social welfare as $k\longrightarrow \infty$. The median $\forall k 
+\geq 2$ will be 2, leading to a social welfare of $4$. Therefore, for any value $k > 8$, the median mechanism achieves less than half the optimal welfare which is $k$.
+\end{proof}
+
+A natural question to ask is under what assumptions do median mechanisms perform well with respect to the optimal social welfare. We now introduce some definitions that will allow us to design a modified median mechanism and argue for a 2-approximation to optimal social welfare.
+\begin{definition}
+The \textit{Weighted Median} mechanism is defined over an ordered multi-set of weighted bliss points \textbf{b} = $\{(b_1, w_1),\cdots,(b_n, w_n)\}$ outputs the element $b_k$ that is incident where at most half the weight falls.
+$$
+b_k = \sup\{b_i~|~\sum_{j=1}^i w_j \leq \frac{\sum_{j=1}^n w_j}{2}\}
+$$
+\end{definition}
+\begin{proposition}
+For weight distributions $\mathcal{D}$ proportional to a node's bliss point or capacity where no player has $\geq 50\%$ of weight, the Weighted Median mechanism achieves a 2-approximation to optimal social welfare.
+\end{proposition}
+\begin{proof}
+Let the weights \textbf{w} be defined for each player as 
+$$
+\forall i\in V,~w_i = \frac{b_i}{\sum_{j} b_j},~w_i\leq \frac{1}{2}
+$$. We want to show that if $b_k=\pi(\textbf{b})$ that $\sum_{i\in V}v_i(b_k)\geq \frac{1}{2} OPT$. If $\exists w_j = \frac{1}{2}$, notice that $b_k=b_{j-1}$. The social welfare is then 
+$$
+\sum_{i\in V} v_i(\pi(\textbf{b})) \geq 2\cdot \pi(\textbf{b})
+$$
+Since $b_j \leq 2\cdot \pi(\textbf{b})$ by definition, we have that the welfare attained by $\pi(\textbf{b})$ is at least $\frac{1}{2}OPT$.
+
+If no bliss point has half the weight, then this implies that it is closer to $\pi(\textbf{b})$. Therefore, if $\pi(\textbf{b})$ is not the optimal bliss point, the bliss point yielding the optimal welfare yields the following:
+\begin{align*}
+OPT &\leq 2\cdot \sum_{i\in V} v_i(\pi(\textbf{b})) \\
+\frac{1}{2} OPT &\leq \sum_{i\in V} v_i(\pi(\textbf{b}))
+\end{align*}
+\end{proof}
+This claim tells us that we have a good approximation to the optimal social welfare when we have the assumptions set forth by blockchain protocols. We usually assume that no more than half of the computational power concentrates in the hands of a single individual. Therefore, as long as that holds over a Proof of Work based cryptocurrency, the median selection of parameters will give us a 2-approximation of the optimal social welfare.
+
+\subsubsection{VCG Mechanisms}
+In many settings, especially if there is a cost to reporting one's bliss point, we need to properly incentivize the reports while also preserving truthfulness. Here, we turn another realm of mechanism design that uses money to elicit reports from players such that the reports are truthful.
+\begin{theorem}
+The VCG mechanism over bids \textbf{b} is truthful, individually rational, and social-welfare maximizing with $\pi(\textbf{b})\in \argmax_{b\in \textbf{b}} \sum_{i\in V} v_i(b)$. If $i^*$ is the index of $\pi(\textbf{b})\in \textbf{b}$, the mechanism charges the following payment to each agent $i$:
+\begin{align*}
+    P(\textbf{b})_i &= (\max_{j\neq i,~j\in V} (n-j+1)\cdot b_j - v_i(b_j)) - ((n-i^*)\cdot b_{i^*} - v_i(b_{i^*}))
+\end{align*}
+\end{theorem}
+\begin{proof}
+The VCG mechanism charges as payment the externality that individual players impose on the social welfare of the entire group and is known to incentivize truthfulness. Starting from the VCG objective, we have that $\pi(\textbf{b}) = \argmax_{b\in \textbf{b}}\sum_{i\in V} v_i(b)$, which by definition maximizes the social welfare. 
+
+Using similar notation as above, we let $\pi_{-i}(\textbf{b}_{-i})$ be the social-welfare maximizing alternative for the mechanism without agent $i\in V$. We let $j^*$ be the index of $\pi_{-i}(\textbf{b}_{-i})\in \textbf{b}$. The VCG payment is computed as:
+\begin{align*}
+    P(\textbf{b})_i &= \sum_{j\neq i}v_j(\pi_{-i}(\textbf{b}_{-i})) - \sum_{j\neq i}v_j(\pi(\textbf{b})) \\
+    &= \sum_{j\neq i} v_j(\pi_{-i}(\textbf{b}_{-i})) - (n-i^* + 1)\cdot b_{i^*} - v_i(b_{i^*}) \\
+    &= (n-j^* + 1)\cdot b_{j^*} - v_i(b_{j^*}) - (n-i^* + 1)\cdot b_{i^*} - v_i(b_{i^*}) \\ 
+    &= (\max_{j\neq i,~j\in V} (n-j+1)\cdot b_j - v_i(b_{j})) - ((n-i^*+1)\cdot b_{i^*} - v_i(b_{i^*}))
+\end{align*}
+For each agent $i$ with $b_i < \pi(\textbf{b})$, it follows that when $i$ has insufficient capacity to participate, $i$ has no affect whether he/she participates or not.. The welfare from $\pi_{-i}(\textbf{b}_{-i}) = \pi(\textbf{b})$ and consequently generate the same social welfare. Furthermore, agent $i$ is charged zero payment.
+\end{proof}
+% \subsection{Byzantine Agreement}
+% Consider a Byzantine Agreement protocol $\mathcal{P}$ that builds a blockchain and manages a governance mechanism over its blocksize as described above. Further, let each miner also be identical in terms of computational power. As is common with these protocols, $|V|=3f+1$ where $f$ denotes the number of byzantine nodes.
+
+% \begin{definition}
+% A miner $i$ is identical to a miner $j$ if $\hat{b}_i=\hat{b}_j$; that is, miners are identical if their true private states are equal.
+% \end{definition}
+% \begin{definition}
+% $\forall i\in V$ the private state $b_i\in \mathbb{R}$ is the true processing capacity of miner $i$'s hardware.
+% \end{definition}
+% We now describe the protocol in detail. We assume the existence of digital signatures for each agent $i\in V$, denoted by $\sigma_i$. The protocol works by aggregating at least $n-f$ private state reports $\textbf{b}_{n-f}$ and then computing the new alternative $a$. We inherit the logic of the Practical Byzantine Fault Tolerant protocol introduced by Castro and Liskov for building the underlying state machine. To that end, we modify the protocol to include new messages that enable the aggregation of state reports \textbf{b} and to build a blockchain.
+% \begin{protocol}{Byzantine Fault Tolerant Governance}
+% \textit{Inputs.} At round $t$, $\forall i\in V$ with $b^t_i$, $H=\{(a^0,\emptyset),\dots,(a^{t-2},\textbf{b}^{t-1})\}$.
+% \sbline
+% \textit{Goal.} $\mathcal{O}(V)$ uses block size $a^t_{\mathcal{O}(V)}=\pi(\textbf{b}, H\cup\{(a^{t-1}, \textbf{b}^t\})$ to build block $t$.
+% \sbline
+% \textit{The protocol:}
+% \begin{enumerate}
+%   \item \textbf{Setup.}
+%   \begin{enumerate}
+%     \item $\forall i\in V,~i$ computes $b^t_i$ from $a^{t-1}$ and broadcasts $\langle (a^{t-1}, b^t_i)\rangle_{\sigma_i}$
+%     \item $\forall i\in V,~i$ collects $n-f$ reports $\{\langle(a^{t-1}, b^t_j)\rangle_{\sigma_j}\}_{j\in I\subseteq V}$
+%     \item $\forall i\in V,~i$ builds $\langle (a^{t-1}, \textbf{b}^t)_{\sigma}\rangle$ with at most $f$ empty slots in $\textbf{b}^t$.
+%     \item $\forall i\in V,~i$ computes $a^t_i = \pi(\textbf{b}^t, H\cup\{(a^{t-1}, \textbf{b}^t)\}$.
+%     \item $\forall i\in V,~i$ broadcasts $\langle a^t_i, H\cup\{(a^{t-1}, \textbf{b}^t)_{\sigma}\}\rangle$
+%   \end{enumerate}
+% \end{enumerate}
+
+% \end{protocol}
+\end{document}
