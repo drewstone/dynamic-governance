@@ -65,8 +65,7 @@ class Simulator(object):
             # assuming no agents dropout, mining non-empty and empty blocks
             if self.mine and not self.dropout:
                 # leader election proportional to agent capacities
-                leader = statistics.sample_proportional_to_capacity(
-                    self.active_agents)
+                leader = statistics.sample_by_hashpower(self.active_agents)
 
                 # increment throughput based on leader election
                 if leader.capacity < parameter:
