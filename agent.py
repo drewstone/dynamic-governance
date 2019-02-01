@@ -6,11 +6,11 @@ from errors import value_error
 class Agent(object):
     """An agent represents an atomic participant in a governance simulation"""
 
-    def __init__(self, ttype, capacity, report_type):
+    def __init__(self, ttype, capacity, hash_power, report_type):
         super(Agent, self).__init__()
         self.ttype = ttype
         self.capacity = capacity
-        self.hash_power = 3 * capacity
+        self.hash_power = hash_power
         self.report_type = report_type
 
     def report(self, parameter):

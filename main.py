@@ -5,50 +5,59 @@ import constants
 from sim import Simulator
 
 
-def random_node_capacities(n, low, high):
-    return np.random.randint(low, high + 1, n)
+def increasing_node_capacities(n, start, report_type):
+    agents = []
+    caps = np.arange(start, start + n)
+    hashes = np.arange(start, start + n)
+
+    for i in range(n):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            report_type))
+    return agents
 
 
-def increasing_node_capacities(n, start):
-    return np.arange(start, start + n)
+def random_node_capacities(n, low, high, report_type):
+    agents = []
+    caps = np.random.randint(low, high + 1, n)
+    hashes = np.random.randint(low, high + 1, n)
+
+    for i in range(n):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            report_type))
+    return agents
 
 
-def all_honest_random(n, low, high, report_type):
-    return list(map(
-        lambda val: Agent(constants.HONEST_AGENT, val, report_type),
-        random_node_capacities(n, low, high)))
+def explicit_honest_agents(caps, hashes, report_type):
+    agents = []
 
-
-def all_honest_increasing(n, start, report_type):
-    return list(map(
-        lambda val: Agent(constants.HONEST_AGENT, val, report_type),
-        increasing_node_capacities(n, start)))
-
-
-def explicit_honest_agents(capacities, report_type):
-    return list(map(
-        lambda val: Agent(constants.HONEST_AGENT, val, report_type),
-        capacities))
+    for i in range(len(caps)):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            constants.DIRECT_CAPACITY_REPORT))
+    return agents
 
 
 def setup_agents(options):
-    if len(options["capacities"]) > 0:
-        return sorted(explicit_honest_agents(
-            options["capacities"], options["report_type"]),
-            key=lambda a: a.capacity)
+    if len(options["capacities"]) > 0 and len(options["hashes"]) > 0:
+        return explicit_honest_agents(options["capacities"],
+                                      options["hashes"],
+                                      options["report_type"])
 
     if options["agent_mode"] == constants.HONEST_INCREASING_AGENTS:
-        return sorted(all_honest_increasing(options["num_agents"],
-                                            options["low_capacity"],
-                                            options["report_type"]),
-                      key=lambda a: a.capacity)
+        return increasing_node_capacities(options["num_agents"],
+                                          options["low_capacity"],
+                                          options["report_type"])
 
     if options["agent_mode"] == constants.HONEST_RANDOM_AGENTS:
-        return sorted(all_honest_random(options["num_agents"],
-                                        options["low_capacity"],
-                                        options["high_capacity"],
-                                        options["report_type"]),
-                      key=lambda a: a.capacity)
+        return random_node_capacities(options["num_agents"],
+                                      options["low_capacity"],
+                                      options["high_capacity"],
+                                      options["report_type"])
 
     value_error("Unsupported agent type: {}", options["agent_mode"])
 

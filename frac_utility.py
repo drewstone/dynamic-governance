@@ -24,25 +24,29 @@ report_type = constants.DIRECT_CAPACITY_REPORT
 
 
 def increasing_node_capacities(n, start):
-    return list(
-        map(
-            lambda capacity: agent.Agent(behavior_type,
-                                         capacity,
-                                         constants.DIRECT_CAPACITY_REPORT),
-            np.arange(start, start + n)
-        )
-    )
+    agents = []
+    caps = np.arange(start, start + n)
+    hashes = np.arange(start, start + n)
+
+    for i in range(n):
+        agents.append(agent.Agent(behavior_type,
+                      caps[i],
+                      hashes[i],
+                      constants.DIRECT_CAPACITY_REPORT))
+    return agents
 
 
 def random_node_capacities(n, low, high):
-    return list(
-        map(
-            lambda capacity: agent.Agent(behavior_type,
-                                         capacity,
-                                         constants.DIRECT_CAPACITY_REPORT),
-            np.random.randint(low, high + 1, n)
-        )
-    )
+    agents = []
+    caps = np.random.randint(low, high + 1, n)
+    hashes = np.random.randint(low, (high + 1) * 10, n)
+
+    for i in range(n):
+        agents.append(agent.Agent(behavior_type,
+                      caps[i],
+                      hashes[i],
+                      constants.DIRECT_CAPACITY_REPORT))
+    return agents
 
 
 def maximize_obj(reports):
@@ -72,13 +76,13 @@ def get_agent_reports(agents):
 # run simulation a bunch of times
 for t in range(100):
     # sample random node capacities
-    agents = random_node_capacities(100, 10, 100)
+    agents = random_node_capacities(10, 10, 100)
     # get reports from agents
     reports = get_agent_reports(agents)
     # find maximizing capacity
     (max_cap, _) = maximize_obj(reports)
     # logging
-    print("Run {}".format(t))
+    print("Run {}, reports = {}".format(t, reports))
     print("Max cap {}".format(max_cap))
     # test misreporting above and below for all agents below
     for inx, a in enumerate(agents):
@@ -88,7 +92,6 @@ for t in range(100):
             agents_copy = copy.deepcopy(agents)
             ctr = 1
             while a.capacity - ctr > 0:
-                ctr += 1
                 new_capacity = a.capacity - ctr
                 agents_copy[inx].capacity = new_capacity
                 new_reports = get_agent_reports(agents_copy)
@@ -98,15 +101,17 @@ for t in range(100):
                     str = "New max cap: {} with {} deviating with capacity {}"
                     print(str.format(new_max_cap, a.capacity, new_capacity))
 
-            ctr = 1
-            while a.capacity + ctr < a.capacity + 20:
                 ctr += 1
-                new_capacity = a.capacity + ctr
-                agents_copy[inx].capacity = new_capacity
-                new_reports = get_agent_reports(agents_copy)
-                (new_max_cap, new_values) = maximize_obj(new_reports)
 
-                if new_max_cap != max_cap:
-                    str = "New max cap: {} with {} deviating with capacity {}"
-                    print(str.format(new_max_cap, a.capacity, new_capacity))
+            ctr = 1
+            # while a.capacity + ctr < a.capacity + 20:
+            #     ctr += 1
+            #     new_capacity = a.capacity + ctr
+            #     agents_copy[inx].capacity = new_capacity
+            #     new_reports = get_agent_reports(agents_copy)
+            #     (new_max_cap, new_values) = maximize_obj(new_reports)
+
+            #     if new_max_cap != max_cap:
+            #         str = "New max cap: {} with {} deviating with capacity {}"
+            #         print(str.format(new_max_cap, a.capacity, new_capacity))
     print("")
