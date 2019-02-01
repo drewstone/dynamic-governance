@@ -1,8 +1,9 @@
+import numpy as np
 from errors import value_error
 from gov import Government
 import constants
 import statistics
-import numpy as np
+import logger
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt  # noqa
@@ -12,8 +13,8 @@ class Simulator(object):
     def __init__(self, options):
         super(Simulator, self).__init__()
         self.initial_param = options["initial_param"]
-        self.active_agents = options["agents"]
-        self.inactive_agents = list()
+        self.active = options["agents"]
+        self.inactive = list()
         self.num_rounds = options["num_rounds"]
         self.num_times = options["num_times"]
         self.step_type = options["step_type"]
@@ -45,27 +46,18 @@ class Simulator(object):
 
         t_key = "{}-{}-throughput".format(u_type, d_type)
         self.history[t_key] = 0
-
-        if self.logging_mode == constants.DEBUG_LOGGING:
-            print("Agents = {}".format(
-                list(map(lambda agent: agent.capacity, self.active_agents))))
-            print("Starting parameter: {}".format(gov.parameter))
+        logger.init(self.logging_mode, gov, self.active)
 
         for i in range(self.num_rounds):
             r_key = "{}-{}-{}".format(u_type, d_type, i)
             parameter, payments = self.step(gov)
 
-            if self.logging_mode == constants.DEBUG_LOGGING:
-                print("\nRound {} | OLD_P = {}, NEW_P = {}, TPS = {}\n"
-                      .format(gov.round,
-                              gov.previous_parameter,
-                              gov.parameter,
-                              self.history[t_key]))
+            logger.round(self.logging_mode, gov, self.history[t_key])
 
             # assuming no agents dropout, mining non-empty and empty blocks
             if self.mine and not self.dropout:
                 # leader election proportional to agent capacities
-                leader = statistics.sample_by_hashpower(self.active_agents)
+                leader = statistics.sample_by_hashpower(self.active)
 
                 # increment throughput based on leader election
                 if leader.capacity < parameter:
@@ -80,53 +72,42 @@ class Simulator(object):
 
             # if nodes dropout based on parameter selection
             if self.dropout:
-                self.inactive_agents = self.inactive_agents + list(
+                self.inactive = self.inactive + list(
                     filter(lambda a: a.capacity < parameter,
-                           self.active_agents))
-                self.active_agents = list(
+                           self.active))
+                self.active = list(
                     filter(lambda a: a.capacity >= parameter,
-                           self.active_agents))
+                           self.active))
 
-                print("Active agents: {}".format(
-                    list(map(lambda a: a.capacity, self.active_agents))))
-                print("Inactive agents: {}".format(
-                    list(map(lambda a: a.capacity, self.inactive_agents))))
-
-                if payments:
-                    payment_logs = list(map(lambda p: "Param {} => {}"
-                                            .format(p[1], p[0]), payments))
-                    print("\t\t\tPayments\n" + "\n".join(payment_logs))
+                logger.dropout(self.logging_mode, self.active, self.inactive)
+                logger.payments(self.logging_mode, payments)
 
     def step(self, gov):
         # sample a leader uniformly at random
         if self.step_type == constants.UNIFORM_LEADER_ELECTION:
-            leader = self.active_agents[np.random.choice(
-                np.arange(0, len(self.active_agents)))]
+            leader = self.active[np.random.choice(
+                np.arange(0, len(self.active)))]
             return leader.capacity, None
 
         # sample a leader proportional to an agent's capacity
         elif self.step_type == constants.WEIGHTED_LEADER_ELECTION:
-            caps = list(map(lambda a: a.capacity, self.active_agents))
+            caps = list(map(lambda a: a.capacity, self.active))
             weight_sum = sum(caps)
             distribution = [1.0 * i / weight_sum for i in caps]
             leader_index = np.random.choice(
                 np.arange(0, len(caps), p=distribution))
-            leader = self.active_agents[leader_index]
+            leader = self.active[leader_index]
             return leader.capacity, None
 
         # elicit reports from all agents
         elif self.step_type == constants.ALL_REPORTS:
             # gather reports for current parameter
             reports = list(map(lambda a: a.report(gov.parameter),
-                               self.active_agents))
-
-            # gather weights of agents
-            caps = list(map(lambda a: a.capacity, self.active_agents))
-            weight_sum = sum(caps)
-            weights = [1.0 * i / weight_sum for i in caps]
-
+                               self.active))
+            # gather hash power reports
+            hashes = list(map(lambda a: a.hash_power, self.active))
             # advance round and receive new parameter given reports
-            return gov.advance_round(reports, weights)
+            return gov.advance_round(reports, hashes)
         else:
             value_error("Unsupported step type: {}", self.step_type)
 

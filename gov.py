@@ -41,6 +41,8 @@ class Government(object):
             return self.upper_median_vote(reports)
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
             return self.weighted_median_vote(reports, weights)
+        elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
+            return self.hash_cap_selection(reports, weights)
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
 

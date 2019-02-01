@@ -24,6 +24,7 @@ UPPER_MEDIAN_REPORT = 'upper-median'
 WEIGHTED_MEDIAN_REPORT = 'weighted-median'
 MAJORITY_VOTE_DECISION = 'majority'
 SOCIAL_WELFARE_MAXIMIZING = 'vcg'
+HASHPOWER_CAPACITY_MAXIMIZING = 'hashpower-capacity'
 
 # Report types
 DIRECTIONAL_REPORT = 'directional'
