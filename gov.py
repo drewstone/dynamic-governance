@@ -28,7 +28,7 @@ class Government(object):
 
         return self.parameter, payments
 
-    def decide(self, reports, weights):
+    def decide(self, reports, hashes):
         if self.decision_type == constants.MAJORITY_VOTE_DECISION:
             return self.incremental_vote(reports)
         elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
@@ -40,9 +40,9 @@ class Government(object):
         elif self.decision_type == constants.UPPER_MEDIAN_REPORT:
             return self.upper_median_vote(reports)
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
-            return self.weighted_median_vote(reports, weights)
+            return self.weighted_median_vote(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
-            return self.hash_cap_selection(reports, weights)
+            return self.hash_cap_selection(reports, hashes)
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
 
@@ -70,7 +70,7 @@ class Government(object):
         payments = self.VCG.payments(reports, max_welfare, max_param)
         return max_param, payments
 
-    def median_report(self, reports):
+    def median_vote(self, reports):
         if len(reports) % 2 == 0:
             median = 0.5 * \
                 (reports[int(len(reports) / 2) - 1] +
@@ -80,7 +80,7 @@ class Government(object):
 
         return median, None
 
-    def lower_median_report(self, reports):
+    def lower_median_vote(self, reports):
         if len(reports) % 2 == 0:
             median = reports[int(len(reports) / 2) - 1]
         else:
@@ -92,6 +92,27 @@ class Government(object):
         median = reports[int(len(reports) / 2)]
         return median, None
 
-    def weighted_median_vote(self, reports, weights):
+    def weighted_median_vote(self, reports, hashes):
+        weight_sum = sum(hashes)
+        weights = [1.0 * i / weight_sum for i in hashes]
         w_median = int(statistics.wtd_median(reports, weights))
         return w_median, None
+
+    def hash_cap_selection(self, reports, hashes):
+        max_cap = 0
+        max_obj = 0
+        for i in range(len(reports)):
+            capacity = reports[i]
+            summed_hashpower = 0
+            for j in range(len(reports)):
+                c = reports[j]
+                h = hashes[j]
+
+                if c >= capacity:
+                    summed_hashpower += h * capacity
+
+            if summed_hashpower > max_obj:
+                max_cap = capacity
+                max_obj = summed_hashpower
+
+        return max_cap, None

@@ -74,13 +74,17 @@ if __name__ == "__main__":
 
     agents = setup_agents(agent_options)
     initial_param = 0
-    num_rounds = 5 * (int(np.ceil(np.log(11))) + 1)
+    num_rounds = 3 * (int(np.ceil(np.log(11))) + 1)
     num_times = 100
     step_type = constants.ALL_REPORTS
 
     decision_types = [
         constants.SOCIAL_WELFARE_MAXIMIZING,
-        constants.MEDIAN_REPORT
+        constants.MEDIAN_REPORT,
+        constants.LOWER_MEDIAN_REPORT,
+        constants.UPPER_MEDIAN_REPORT,
+        constants.WEIGHTED_MEDIAN_REPORT,
+        constants.HASHPOWER_CAPACITY_MAXIMIZING
     ]
     utility_types = [
         constants.LINEAR_UTILITY,
