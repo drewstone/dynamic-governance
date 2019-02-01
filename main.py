@@ -84,7 +84,6 @@ if __name__ == "__main__":
     ]
     utility_types = [
         constants.LINEAR_UTILITY,
-        constants.PROPORTIONAL_UTILITY
     ]
 
     # logging_mode = constants.DEBUG_LOGGING

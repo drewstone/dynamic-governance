@@ -96,22 +96,21 @@ for t in range(100):
                 agents_copy[inx].capacity = new_capacity
                 new_reports = get_agent_reports(agents_copy)
                 (new_max_cap, new_values) = maximize_obj(new_reports)
+                ctr += 1
 
                 if new_max_cap != max_cap:
                     str = "New max cap: {} with {} deviating with capacity {}"
                     print(str.format(new_max_cap, a.capacity, new_capacity))
 
+            ctr = 1
+            while a.capacity + ctr < a.capacity + 5:
+                new_capacity = a.capacity + ctr
+                agents_copy[inx].capacity = new_capacity
+                new_reports = get_agent_reports(agents_copy)
+                (new_max_cap, new_values) = maximize_obj(new_reports)
                 ctr += 1
 
-            ctr = 1
-            # while a.capacity + ctr < a.capacity + 20:
-            #     ctr += 1
-            #     new_capacity = a.capacity + ctr
-            #     agents_copy[inx].capacity = new_capacity
-            #     new_reports = get_agent_reports(agents_copy)
-            #     (new_max_cap, new_values) = maximize_obj(new_reports)
-
-            #     if new_max_cap != max_cap:
-            #         str = "New max cap: {} with {} deviating with capacity {}"
-            #         print(str.format(new_max_cap, a.capacity, new_capacity))
+                if new_max_cap != max_cap:
+                    str = "New max cap: {} with {} deviating with capacity {}"
+                    print(str.format(new_max_cap, a.capacity, new_capacity))
     print("")

@@ -26,12 +26,25 @@ class Government(object):
         if self.parameter < 0:
             self.parameter = 0
 
-        # increment round and return parameter
-        self.round += 1
         return self.parameter, payments
 
     def decide(self, reports, weights):
         if self.decision_type == constants.MAJORITY_VOTE_DECISION:
+            return self.incremental_vote(reports)
+        elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
+            return self.vcg_selection(reports)
+        elif self.decision_type == constants.MEDIAN_REPORT:
+            return self.median_vote(reports)
+        elif self.decision_type == constants.LOWER_MEDIAN_REPORT:
+            return self.lower_median_vote(reports)
+        elif self.decision_type == constants.UPPER_MEDIAN_REPORT:
+            return self.upper_median_vote(reports)
+        elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
+            return self.weighted_median_vote(reports, weights)
+        else:
+            value_error("Unsupported decision type: {}", self.decision_type)
+
+    def incremental_vote(self, reports):
             # count votes of all participants based on capacity
             lost_count = len(list(filter(lambda r: r == 0, reports)))
             fixed_count = len(list(filter(lambda r: r == 1, reports)))
@@ -47,33 +60,36 @@ class Government(object):
                 return self.parameter, None
             else:
                 return self.parameter + 1, None
-        elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
-            # find social welfare maximizing parameter given capacity reports
-            (max_welfare, max_param) = self.VCG.select(reports)
-            # get payments for strategy-proofness
-            payments = self.VCG.payments(reports, max_welfare, max_param)
-            return max_param, payments
-        elif self.decision_type == constants.MEDIAN_REPORT:
-            if len(reports) % 2 == 0:
-                median = 0.5 * \
-                    (reports[int(len(reports) / 2) - 1] +
-                     reports[int(len(reports) / 2)])
-            else:
-                median = reports[int(len(reports) / 2)]
 
-            return median, None
-        elif self.decision_type == constants.LOWER_MEDIAN_REPORT:
-            if len(reports) % 2 == 0:
-                median = reports[int(len(reports) / 2) - 1]
-            else:
-                median = reports[int(len(reports) / 2)]
+    def vcg_selection(self, reports):
+        # find social welfare maximizing parameter given capacity reports
+        (max_welfare, max_param) = self.VCG.select(reports)
+        # get payments for strategy-proofness
+        payments = self.VCG.payments(reports, max_welfare, max_param)
+        return max_param, payments
 
-            return median, None
-        elif self.decision_type == constants.UPPER_MEDIAN_REPORT:
-            median = reports[int(len(reports) / 2)]
-            return median, None
-        elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
-            w_median = int(statistics.wtd_median(reports, weights))
-            return w_median, None
+    def median_report(self, reports):
+        if len(reports) % 2 == 0:
+            median = 0.5 * \
+                (reports[int(len(reports) / 2) - 1] +
+                 reports[int(len(reports) / 2)])
         else:
-            value_error("Unsupported decision type: {}", self.decision_type)
+            median = reports[int(len(reports) / 2)]
+
+        return median, None
+
+    def lower_median_report(self, reports):
+        if len(reports) % 2 == 0:
+            median = reports[int(len(reports) / 2) - 1]
+        else:
+            median = reports[int(len(reports) / 2)]
+
+        return median, None
+
+    def upper_median_vote(self, reports):
+        median = reports[int(len(reports) / 2)]
+        return median, None
+
+    def weighted_median_vote(self, reports, weights):
+        w_median = int(statistics.wtd_median(reports, weights))
+        return w_median, None
