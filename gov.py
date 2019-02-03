@@ -7,28 +7,32 @@ import statistics
 class Government(object):
     def __init__(self, options):
         super(Government, self).__init__()
-        self.previous_parameter = None
-        self.parameter = options["initial_param"]
+        self.prev_param = None
+        self.param = options["initial_param"]
         self.decision_type = options["decision_type"]
         self.utility_type = options["utility_type"]
+        self.bounded_perc = options["bounded_percent"]
+
+        if not self.bounded_perc:
+            self.bounded_perc = 0.1
 
         if self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
             self.VCG = vcg.VCGMechanism(self.utility_type)
 
         self.round = 0
 
-    def advance_round(self, reports, weights):
-        self.previous_parameter = self.parameter
+    def advance_round(self, reports, weights, leader):
+        self.prev_param = self.param
 
         # move parameter according to majority
-        self.parameter, payments = self.decide(reports, weights)
+        self.param, payments = self.decide(reports, weights, leader)
+        # safety check
+        if self.param < 0:
+            self.param = 0
 
-        if self.parameter < 0:
-            self.parameter = 0
+        return self.param, payments
 
-        return self.parameter, payments
-
-    def decide(self, reports, hashes):
+    def decide(self, reports, hashes, leader):
         if self.decision_type == constants.MAJORITY_VOTE_DECISION:
             return self.incremental_vote(reports)
         elif self.decision_type == constants.SOCIAL_WELFARE_MAXIMIZING:
@@ -43,6 +47,10 @@ class Government(object):
             return self.weighted_median_vote(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
             return self.hash_cap_selection(reports, hashes)
+        elif self.decision_type == constants.LEADER_REPORT:
+            return self.leader_report(leader)
+        elif self.decision_type == constants.BOUNDED_LEADER_REPORT:
+            return self.bounded_leader_report(leader)
         else:
             value_error("Unsupported decision type: {}", self.decision_type)
 
@@ -57,11 +65,11 @@ class Government(object):
             majority_index = temp_arr.index(max(temp_arr))
 
             if majority_index == 0:
-                return self.parameter - 1, None
+                return self.param - 1, None
             if majority_index == 1:
-                return self.parameter, None
+                return self.param, None
             else:
-                return self.parameter + 1, None
+                return self.param + 1, None
 
     def vcg_selection(self, reports):
         # find social welfare maximizing parameter given capacity reports
@@ -116,3 +124,14 @@ class Government(object):
                 max_obj = summed_hashpower
 
         return max_cap, None
+
+    def leader_report(self, leader):
+        return leader.capacity
+
+    def bounded_leader_report(self, leader):
+        if leader.capacity > self.prev_param * (1 + self.bounded_perc):
+            return self.prev_param * (1 + self.bounded_perc)
+        elif leader.capacity < self.prev_param * (1 - self.bounded_perc):
+            return self.prev_param * (1 + self.bounded_perc)
+        else:
+            return leader.capacity

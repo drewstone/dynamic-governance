@@ -76,7 +76,7 @@ if __name__ == "__main__":
     initial_param = 0
     num_rounds = 3 * (int(np.ceil(np.log(11))) + 1)
     num_times = 100
-    step_type = constants.ALL_REPORTS
+    bounded_perc = 0.1
 
     decision_types = [
         constants.SOCIAL_WELFARE_MAXIMIZING,
@@ -98,10 +98,10 @@ if __name__ == "__main__":
         "num_rounds": num_rounds,
         "num_times": num_times,
         "initial_param": initial_param,
-        "step_type": step_type,
         "decision_types": decision_types,
         "utility_types": utility_types,
         "logging_mode": logging_mode,
+        "bounded_percent": bounded_perc,
     })
 
     sim.start()

@@ -1,7 +1,5 @@
 import numpy as np
-from errors import value_error
 from gov import Government
-import constants
 import statistics
 import logger
 import matplotlib
@@ -17,10 +15,10 @@ class Simulator(object):
         self.inactive = list()
         self.num_rounds = options["num_rounds"]
         self.num_times = options["num_times"]
-        self.step_type = options["step_type"]
         self.logging_mode = options["logging_mode"]
         self.utility_types = options["utility_types"]
         self.decision_types = options["decision_types"]
+        self.bounded_perc = options["bounded_percent"]
 
         # initialize government
         self.dropout = False
@@ -42,6 +40,7 @@ class Simulator(object):
             "initial_param": initial_param,
             "utility_type": u_type,
             "decision_type": d_type,
+            "bounded_percent": self.bounded_perc,
         })
 
         t_key = "{}-{}-throughput".format(u_type, d_type)
@@ -50,66 +49,42 @@ class Simulator(object):
 
         for i in range(self.num_rounds):
             r_key = "{}-{}-{}".format(u_type, d_type, i)
-            parameter, payments = self.step(gov)
-
             logger.round(self.logging_mode, gov, self.history[t_key])
 
-            # assuming no agents dropout, mining non-empty and empty blocks
-            if self.mine and not self.dropout:
-                # leader election proportional to agent capacities
-                leader = statistics.sample_by_hashpower(self.active)
+            # leader election proportional to agent capacities
+            leader = statistics.sample_by_hashpower(self.active)
+            param, payments = self.step(gov, leader)
 
-                # increment throughput based on leader election
-                if leader.capacity < parameter:
-                    increment = 0
-                else:
-                    increment = parameter
+            # increment throughput based on leader election
+            if leader.capacity < param:
+                increment = 0
+            else:
+                increment = param
 
-                if r_key in self.history:
-                    self.history[r_key].append(increment)
-                else:
-                    self.history[r_key] = [increment]
+            if r_key in self.history:
+                self.history[r_key].append(increment)
+            else:
+                self.history[r_key] = [increment]
 
-            # if nodes dropout based on parameter selection
+            # if nodes dropout based on param selection
             if self.dropout:
                 self.inactive = self.inactive + list(
-                    filter(lambda a: a.capacity < parameter,
+                    filter(lambda a: a.capacity < param,
                            self.active))
                 self.active = list(
-                    filter(lambda a: a.capacity >= parameter,
+                    filter(lambda a: a.capacity >= param,
                            self.active))
 
                 logger.dropout(self.logging_mode, self.active, self.inactive)
                 logger.payments(self.logging_mode, payments)
 
-    def step(self, gov):
-        # sample a leader uniformly at random
-        if self.step_type == constants.UNIFORM_LEADER_ELECTION:
-            leader = self.active[np.random.choice(
-                np.arange(0, len(self.active)))]
-            return leader.capacity, None
-
-        # sample a leader proportional to an agent's capacity
-        elif self.step_type == constants.WEIGHTED_LEADER_ELECTION:
-            caps = list(map(lambda a: a.capacity, self.active))
-            weight_sum = sum(caps)
-            distribution = [1.0 * i / weight_sum for i in caps]
-            leader_index = np.random.choice(
-                np.arange(0, len(caps), p=distribution))
-            leader = self.active[leader_index]
-            return leader.capacity, None
-
-        # elicit reports from all agents
-        elif self.step_type == constants.ALL_REPORTS:
-            # gather reports for current parameter
-            reports = list(map(lambda a: a.report(gov.parameter),
-                               self.active))
-            # gather hash power reports
-            hashes = list(map(lambda a: a.hash_power, self.active))
-            # advance round and receive new parameter given reports
-            return gov.advance_round(reports, hashes)
-        else:
-            value_error("Unsupported step type: {}", self.step_type)
+    def step(self, gov, leader):
+        # gather reports for current param
+        reports = list(map(lambda a: a.report(gov.param), self.active))
+        # gather hash power reports
+        hashes = list(map(lambda a: a.hash_power, self.active))
+        # advance round and receive new param given reports
+        return gov.advance_round(reports, hashes, leader)
 
     def plot_history(self):
         means = {}
