@@ -32,3 +32,7 @@ DIRECT_CAPACITY_REPORT = 'direct-capacity'
 # Logging modes
 DEBUG_LOGGING = 'debug'
 MULTI_SIM_LOGGING = 'multi-sim'
+LOG_DROPOUT = 'log-dropout'
+LOG_ROUND = 'log-round'
+LOG_INIT = 'log-init'
+LOG_PAYMENTS = 'log-payments'

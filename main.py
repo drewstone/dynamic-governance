@@ -64,7 +64,7 @@ def setup_agents(options):
 
 if __name__ == "__main__":
     agent_options = {
-        "num_agents": 10,
+        "num_agents": 30,
         "low_capacity": 5,
         "high_capacity": 100,
         "agent_mode": constants.HONEST_RANDOM_AGENTS,
@@ -73,10 +73,10 @@ if __name__ == "__main__":
     }
 
     agents = setup_agents(agent_options)
-    initial_param = 0
-    num_rounds = 10 * (int(np.ceil(np.log(11))) + 1)
-    num_times = 100
-    bounded_perc = 0.1
+    initial_param = 1
+    num_rounds = 5 * (int(np.ceil(np.log(30))) + 1)
+    num_times = 20
+    bounded_perc = 0.25
 
     decision_types = [
         constants.SOCIAL_WELFARE_MAXIMIZING,
@@ -86,6 +86,8 @@ if __name__ == "__main__":
         constants.WEIGHTED_MEDIAN_REPORT,
         constants.HASHPOWER_CAPACITY_MAXIMIZING,
         constants.FRACTIONAL_HASHCAP_MAXIMIZING,
+        constants.LEADER_REPORT,
+        constants.BOUNDED_LEADER_REPORT,
     ]
     utility_types = [
         constants.LINEAR_UTILITY,
@@ -93,6 +95,7 @@ if __name__ == "__main__":
 
     # logging_mode = constants.DEBUG_LOGGING
     logging_mode = None
+    # logging_mode = constants.LOG_DROPOUT
 
     sim = Simulator({
         "agents": agents,

@@ -21,11 +21,11 @@ class Government(object):
 
         self.round = 0
 
-    def advance_round(self, reports, weights, leader):
+    def advance_round(self, reports, hashes, leader):
         self.prev_param = self.param
 
         # move parameter according to majority
-        self.param, payments = self.decide(reports, weights, leader)
+        self.param, payments = self.decide(reports, hashes, leader)
         # safety check
         if self.param < 0:
             self.param = 0
@@ -145,12 +145,12 @@ class Government(object):
         return max_cap, None
 
     def leader_report(self, leader):
-        return leader.capacity
+        return leader.capacity, None
 
     def bounded_leader_report(self, leader):
         if leader.capacity > self.prev_param * (1 + self.bounded_perc):
-            return self.prev_param * (1 + self.bounded_perc)
+            return self.prev_param * (1 + self.bounded_perc), None
         elif leader.capacity < self.prev_param * (1 - self.bounded_perc):
-            return self.prev_param * (1 + self.bounded_perc)
+            return self.prev_param * (1 - self.bounded_perc), None
         else:
-            return leader.capacity
+            return leader.capacity, None

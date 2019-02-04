@@ -2,14 +2,14 @@ import constants
 
 
 def init(mode, gov, agents):
-    if mode == constants.DEBUG_LOGGING:
+    if mode == constants.DEBUG_LOGGING or mode == constants.LOG_INIT:
         print("Agents = {}".format(
             list(map(lambda agent: agent.capacity, agents))))
         print("Starting param: {}".format(gov.param))
 
 
 def round(mode, round, gov, throughput):
-    if mode == constants.DEBUG_LOGGING:
+    if mode == constants.DEBUG_LOGGING or mode == constants.LOG_ROUND:
         print("\nRound {} | OLD_P = {}, NEW_P = {}, TPS = {}, RULE = {}\n"
               .format(round,
                       gov.prev_param,
@@ -19,7 +19,7 @@ def round(mode, round, gov, throughput):
 
 
 def dropout(mode, active, inactive):
-    if mode == constants.DEBUG_LOGGING:
+    if mode == constants.DEBUG_LOGGING or mode == constants.LOG_DROPOUT:
         print("Active agents: {}".format(
             list(map(lambda a: a.capacity, active))))
         print("Inactive agents: {}".format(
@@ -27,7 +27,7 @@ def dropout(mode, active, inactive):
 
 
 def payments(mode, payments):
-    if mode == constants.DEBUG_LOGGING:
+    if mode == constants.DEBUG_LOGGING or mode == constants.LOG_PAYMENTS:
         if payments:
             payment_logs = list(map(lambda p: "Param {} => {}"
                                     .format(p[1], p[0]), payments))

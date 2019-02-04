@@ -20,7 +20,7 @@ class Simulator(object):
         self.bounded_perc = options["bounded_percent"]
 
         # initialize government
-        self.dropout = False
+        self.dropout = True
         self.mine = True
 
     def start(self):
