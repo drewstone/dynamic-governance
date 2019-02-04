@@ -29,7 +29,7 @@ class Government(object):
         # safety check
         if self.param < 0:
             self.param = 0
-
+        # return parameter and payments
         return self.param, payments
 
     def decide(self, reports, hashes, leader):
@@ -46,6 +46,8 @@ class Government(object):
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
             return self.weighted_median_vote(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
+            return self.fractional_hash_cap_selection(reports, hashes)
+        elif self.decision_type == constants.FRACTIONAL_HASHCAP_MAXIMIZING:
             return self.hash_cap_selection(reports, hashes)
         elif self.decision_type == constants.LEADER_REPORT:
             return self.leader_report(leader)
@@ -56,20 +58,20 @@ class Government(object):
 
     def incremental_vote(self, reports):
             # count votes of all participants based on capacity
-            lost_count = len(list(filter(lambda r: r == 0, reports)))
-            fixed_count = len(list(filter(lambda r: r == 1, reports)))
-            surplus_count = len(list(filter(lambda r: r == 2, reports)))
+        lost_count = len(list(filter(lambda r: r == 0, reports)))
+        fixed_count = len(list(filter(lambda r: r == 1, reports)))
+        surplus_count = len(list(filter(lambda r: r == 2, reports)))
 
-            # find majority group from number of reports
-            temp_arr = [lost_count, fixed_count, surplus_count]
-            majority_index = temp_arr.index(max(temp_arr))
+        # find majority group from number of reports
+        temp_arr = [lost_count, fixed_count, surplus_count]
+        majority_index = temp_arr.index(max(temp_arr))
 
-            if majority_index == 0:
-                return self.param - 1, None
-            if majority_index == 1:
-                return self.param, None
-            else:
-                return self.param + 1, None
+        if majority_index == 0:
+            return self.param - 1, None
+        if majority_index == 1:
+            return self.param, None
+        else:
+            return self.param + 1, None
 
     def vcg_selection(self, reports):
         # find social welfare maximizing parameter given capacity reports
@@ -122,6 +124,23 @@ class Government(object):
             if summed_hashpower > max_obj:
                 max_cap = capacity
                 max_obj = summed_hashpower
+
+        return max_cap, None
+
+    def fractional_hash_cap_selection(self, reports, hashes):
+        max_cap = 0
+        max_obj = 0
+        total_sum = sum([hashes[i] for i in range(len(reports))])
+        for i in range(len(reports)):
+            capacity = reports[i]
+            for j in range(len(reports)):
+                hash_sum = sum([hashes[i] for i in range(
+                    len(reports)) if reports[i] >= capacity])
+                frac_utility = (1.0 * hash_sum / total_sum) * capacity
+
+            if frac_utility > max_obj:
+                max_cap = capacity
+                max_obj = frac_utility
 
         return max_cap, None
 

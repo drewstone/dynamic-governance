@@ -20,7 +20,9 @@ WEIGHTED_MEDIAN_REPORT = 'weighted-median'
 MAJORITY_VOTE_DECISION = 'majority'
 SOCIAL_WELFARE_MAXIMIZING = 'vcg'
 HASHPOWER_CAPACITY_MAXIMIZING = 'hashpower-capacity'
+FRACTIONAL_HASHCAP_MAXIMIZING = 'frac-hashpower-capacity'
 LEADER_REPORT = 'leader-report'
+BOUNDED_LEADER_REPORT = 'bounded-leader'
 
 # Report types
 DIRECTIONAL_REPORT = 'directional'

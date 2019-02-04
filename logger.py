@@ -5,16 +5,17 @@ def init(mode, gov, agents):
     if mode == constants.DEBUG_LOGGING:
         print("Agents = {}".format(
             list(map(lambda agent: agent.capacity, agents))))
-        print("Starting parameter: {}".format(gov.parameter))
+        print("Starting param: {}".format(gov.param))
 
 
-def round(mode, gov, throughput):
+def round(mode, round, gov, throughput):
     if mode == constants.DEBUG_LOGGING:
-        print("\nRound {} | OLD_P = {}, NEW_P = {}, TPS = {}\n"
-              .format(gov.round,
-                      gov.previous_parameter,
-                      gov.parameter,
-                      throughput))
+        print("\nRound {} | OLD_P = {}, NEW_P = {}, TPS = {}, RULE = {}\n"
+              .format(round,
+                      gov.prev_param,
+                      gov.param,
+                      throughput,
+                      gov.decision_type))
 
 
 def dropout(mode, active, inactive):

@@ -12,7 +12,6 @@ class Simulator(object):
         super(Simulator, self).__init__()
         self.initial_param = options["initial_param"]
         self.active = options["agents"]
-        self.inactive = list()
         self.num_rounds = options["num_rounds"]
         self.num_times = options["num_times"]
         self.logging_mode = options["logging_mode"]
@@ -43,23 +42,26 @@ class Simulator(object):
             "bounded_percent": self.bounded_perc,
         })
 
+        active = self.active
+        inactive = list()
+
         t_key = "{}-{}-throughput".format(u_type, d_type)
         self.history[t_key] = 0
-        logger.init(self.logging_mode, gov, self.active)
+        logger.init(self.logging_mode, gov, active)
 
         for i in range(self.num_rounds):
             r_key = "{}-{}-{}".format(u_type, d_type, i)
-            logger.round(self.logging_mode, gov, self.history[t_key])
-
+            logger.round(self.logging_mode, i, gov, self.history[t_key])
             # leader election proportional to agent capacities
-            leader = statistics.sample_by_hashpower(self.active)
-            param, payments = self.step(gov, leader)
-
+            leader = statistics.sample_by_hashpower(active)
+            param, payments = self.step(gov, leader, active, inactive)
             # increment throughput based on leader election
             if leader.capacity < param:
                 increment = 0
             else:
                 increment = param
+
+            self.history[t_key] += increment
 
             if r_key in self.history:
                 self.history[r_key].append(increment)
@@ -68,21 +70,21 @@ class Simulator(object):
 
             # if nodes dropout based on param selection
             if self.dropout:
-                self.inactive = self.inactive + list(
+                inactive = inactive + list(
                     filter(lambda a: a.capacity < param,
-                           self.active))
-                self.active = list(
+                           active))
+                active = list(
                     filter(lambda a: a.capacity >= param,
-                           self.active))
+                           active))
 
-                logger.dropout(self.logging_mode, self.active, self.inactive)
+                logger.dropout(self.logging_mode, active, inactive)
                 logger.payments(self.logging_mode, payments)
 
-    def step(self, gov, leader):
+    def step(self, gov, leader, active, inactive):
         # gather reports for current param
-        reports = list(map(lambda a: a.report(gov.param), self.active))
+        reports = list(map(lambda a: a.report(gov.param), active))
         # gather hash power reports
-        hashes = list(map(lambda a: a.hash_power, self.active))
+        hashes = list(map(lambda a: a.hash_power, active))
         # advance round and receive new param given reports
         return gov.advance_round(reports, hashes, leader)
 
@@ -106,6 +108,7 @@ class Simulator(object):
                     mins[index_key] = []
 
                 # get statistics for each utility and decision type
+                fig = plt.figure()
                 for i in range(self.num_rounds):
                     history_key = "-".join([u_type, d_type, str(i)])
 
@@ -138,4 +141,5 @@ class Simulator(object):
                              fmt='.k',
                              ecolor='gray',
                              lw=1)
-                fig.savefig('{}-{}.png'.format(d_type, u_type), dpi=fig.dpi)
+                file_path = 'images/{}-{}.png'.format(d_type, u_type)
+                fig.savefig(file_path, dpi=fig.dpi)
