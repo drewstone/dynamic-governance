@@ -7,7 +7,7 @@ from sim import Simulator
 
 def increasing_node_capacities(n, start, report_type):
     agents = []
-    caps = np.arange(start, start + n)
+    caps = sorted(np.arange(start, start + n))
     hashes = np.arange(start, start + n)
 
     for i in range(n):
@@ -20,7 +20,7 @@ def increasing_node_capacities(n, start, report_type):
 
 def random_node_capacities(n, low, high, report_type):
     agents = []
-    caps = np.random.randint(low, high + 1, n)
+    caps = sorted(np.random.randint(low, high + 1, n))
     hashes = np.random.randint(low, high + 1, n)
 
     for i in range(n):
