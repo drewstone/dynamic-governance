@@ -80,15 +80,16 @@ if __name__ == "__main__":
     bounded_perc = 0.25
 
     decision_types = [
-        constants.SOCIAL_WELFARE_MAXIMIZING,
-        constants.MEDIAN_REPORT,
-        constants.LOWER_MEDIAN_REPORT,
-        constants.UPPER_MEDIAN_REPORT,
-        constants.WEIGHTED_MEDIAN_REPORT,
+        # constants.SOCIAL_WELFARE_MAXIMIZING,
+        # constants.MEDIAN_REPORT,
+        # constants.LOWER_MEDIAN_REPORT,
+        # constants.UPPER_MEDIAN_REPORT,
+        # constants.WEIGHTED_MEDIAN_REPORT,
         constants.HASHPOWER_CAPACITY_MAXIMIZING,
-        constants.FRACTIONAL_HASHCAP_MAXIMIZING,
-        constants.LEADER_REPORT,
-        constants.BOUNDED_LEADER_REPORT,
+        constants.HASHPOWER_CAPSQUARED_MAXIMIZING,
+        constants.HASHPOWER_CAPSQRT_MAXIMIZING,
+        # constants.LEADER_REPORT,
+        # constants.BOUNDED_LEADER_REPORT,
     ]
     utility_types = [
         constants.LINEAR_UTILITY,

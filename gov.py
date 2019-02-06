@@ -1,3 +1,4 @@
+import math
 import vcg
 import constants
 from errors import value_error
@@ -12,6 +13,8 @@ class Government(object):
         self.decision_type = options["decision_type"]
         self.utility_type = options["utility_type"]
         self.bounded_perc = options["bounded_percent"]
+
+        self.prefix = "{}-{}".format(self.utility_type, self.decision_type)
 
         if not self.bounded_perc:
             self.bounded_perc = 0.1
@@ -46,9 +49,11 @@ class Government(object):
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
             return self.weighted_median_vote(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
-            return self.fractional_hash_cap_selection(reports, hashes)
-        elif self.decision_type == constants.FRACTIONAL_HASHCAP_MAXIMIZING:
             return self.hash_cap_selection(reports, hashes)
+        elif self.decision_type == constants.HASHPOWER_CAPSQUARED_MAXIMIZING:
+            return self.hash_cap_squared_selection(reports, hashes)
+        elif self.decision_type == constants.HASHPOWER_CAPSQRT_MAXIMIZING:
+            return self.hash_cap_sqrt_selection(reports, hashes)
         elif self.decision_type == constants.LEADER_REPORT:
             return self.leader_report(leader)
         elif self.decision_type == constants.BOUNDED_LEADER_REPORT:
@@ -114,33 +119,44 @@ class Government(object):
         for i in range(len(reports)):
             capacity = reports[i]
             summed_hashpower = 0
-            for j in range(len(reports)):
-                c = reports[j]
-                h = hashes[j]
+            summed_hashpower = sum([
+                hashes[j] for j in range(len(reports)) if reports[j] >= capacity
+            ])
 
-                if c >= capacity:
-                    summed_hashpower += h * capacity
-
-            if summed_hashpower > max_obj:
+            if summed_hashpower * capacity > max_obj:
                 max_cap = capacity
-                max_obj = summed_hashpower
+                max_obj = summed_hashpower * capacity
 
         return max_cap, None
 
-    def fractional_hash_cap_selection(self, reports, hashes):
+    def hash_cap_squared_selection(self, reports, hashes):
         max_cap = 0
         max_obj = 0
-        total_sum = sum([hashes[i] for i in range(len(reports))])
         for i in range(len(reports)):
             capacity = reports[i]
-            for j in range(len(reports)):
-                hash_sum = sum([hashes[i] for i in range(
-                    len(reports)) if reports[i] >= capacity])
-                frac_utility = (1.0 * hash_sum / total_sum) * capacity
+            summed_hashpower = sum([
+                hashes[j] for j in range(len(reports)) if reports[j] >= capacity
+            ])
 
-            if frac_utility > max_obj:
+            if summed_hashpower * (capacity ** 2) > max_obj:
                 max_cap = capacity
-                max_obj = frac_utility
+                max_obj = summed_hashpower * (capacity ** 2)
+
+        return max_cap, None
+
+    def hash_cap_sqrt_selection(self, reports, hashes):
+        max_cap = 0
+        max_obj = 0
+        for i in range(len(reports)):
+            capacity = reports[i]
+            summed_hashpower = 0
+            summed_hashpower = sum([
+                hashes[j] for j in range(len(reports)) if reports[j] >= capacity
+            ])
+
+            if summed_hashpower * math.sqrt(capacity) > max_obj:
+                max_cap = capacity
+                max_obj = summed_hashpower * math.sqrt(capacity)
 
         return max_cap, None
 

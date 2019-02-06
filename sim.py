@@ -30,62 +30,75 @@ class Simulator(object):
     def start(self):
         # initialize histories for plotting
         self.history = {}
-
+        self.govs = {}
+        self.actives = {}
+        self.inactives = {}
         for u_type in self.utility_types:
             for d_type in self.decision_types:
-                self.run_many_times(self.initial_param, u_type, d_type)
+                key = "{}-{}".format(u_type, d_type)
+                self.govs[key] = Government({
+                    "initial_param": self.initial_param,
+                    "utility_type": u_type,
+                    "decision_type": d_type,
+                    "bounded_percent": self.bounded_perc,
+                })
+
+                self.actives[key] = self.active
+                self.inactives[key] = list()
+
+        for _ in range(self.num_times):
+            for i in range(self.num_rounds):
+                self.run_round(i)
 
         self.plot_history()
 
-    def run_many_times(self, initial_param, u_type, d_type):
-        for _ in range(self.num_times):
-            self.run(self.initial_param, u_type, d_type)
+    def run_round(self, i):
+        if not self.dropout:
+            leader = statistics.sample_by_hashpower(self.active)
+        else:
+            leader = None
 
-    def run(self, initial_param, u_type, d_type):
-        gov = Government({
-            "initial_param": initial_param,
-            "utility_type": u_type,
-            "decision_type": d_type,
-            "bounded_percent": self.bounded_perc,
-        })
+        for u_type in self.utility_types:
+            for d_type in self.decision_types:
+                self.run(self.govs["{}-{}".format(u_type, d_type)], leader, i)
 
-        active = self.active
-        inactive = list()
+    def run(self, gov, leader, round):
+        if leader is None:
+            leader = statistics.sample_by_hashpower(self.actives[gov.prefix])
 
-        t_key = "{}-{}-throughput".format(u_type, d_type)
-        self.history[t_key] = 0
-        logger.init(self.logging_mode, gov, active)
+        t_key = "{}-throughput".format(gov.prefix)
+        if t_key not in self.history:
+            self.history[t_key] = 0
 
-        for i in range(self.num_rounds):
-            r_key = "{}-{}-{}".format(u_type, d_type, i)
-            logger.round(self.logging_mode, i, gov, self.history[t_key])
-            # leader election proportional to agent capacities
-            leader = statistics.sample_by_hashpower(active)
-            param, payments = self.step(gov, leader, active, inactive)
-            # increment throughput based on leader election
-            if leader.capacity < param:
-                increment = 0
-            else:
-                increment = param
+        logger.init(self.logging_mode, gov, self.actives[gov.prefix])
 
-            self.history[t_key] += increment
+        r_key = "{}-{}".format(gov.prefix, round)
+        logger.round(self.logging_mode, round, gov, self.history[t_key])
+        param, payments = self.step(gov, leader, self.actives[gov.prefix], self.inactives[gov.prefix])
+        # increment throughput based on leader election
+        if leader.capacity < param:
+            increment = 0
+        else:
+            increment = param
 
-            if r_key in self.history:
-                self.history[r_key].append(increment)
-            else:
-                self.history[r_key] = [increment]
+        self.history[t_key] += increment
 
-            # if nodes dropout based on param selection
-            if self.dropout:
-                inactive = inactive + list(
-                    filter(lambda a: a.capacity < param,
-                           active))
-                active = list(
-                    filter(lambda a: a.capacity >= param,
-                           active))
+        if r_key in self.history:
+            self.history[r_key].append(increment)
+        else:
+            self.history[r_key] = [increment]
 
-                logger.dropout(self.logging_mode, active, inactive)
-                logger.payments(self.logging_mode, payments)
+        # if nodes dropout based on param selection
+        if self.dropout:
+            self.inactives[gov.prefix] = self.inactives[gov.prefix] + list(
+                filter(lambda a: a.capacity < param,
+                        self.actives[gov.prefix]))
+            self.actives[gov.prefix] = list(
+                filter(lambda a: a.capacity >= param,
+                        self.actives[gov.prefix]))
+
+            logger.dropout(self.logging_mode, self.actives[gov.prefix], self.inactives[gov.prefix])
+            logger.payments(self.logging_mode, payments)
 
     def step(self, gov, leader, active, inactive):
         # gather reports for current param
@@ -96,7 +109,6 @@ class Simulator(object):
         return gov.advance_round(reports, hashes, leader)
 
     def plot_history(self):
-        threads = []
         for u_type in self.utility_types:
             for d_type in self.decision_types:
                 self.plot_chart(u_type, d_type)
@@ -123,16 +135,16 @@ class Simulator(object):
         maxes = np.array(maxes)
         mins = np.array(mins)
 
-        xy = np.vstack([pX, pY])
-        z = gaussian_kde(xy)(xy)
+        # xy = np.vstack([pX, pY])
+        # z = gaussian_kde(xy)(xy)
 
         fig = plt.figure()
         title = "Throughput over {} simulation runs\n{} selection with {} utilities".format(self.num_times, d_type, u_type)
         plt.title(title)
-        plt.scatter(pX, pY, c=z, s=100, edgecolor='')
-        plt.colorbar()
-        # plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
-        # plt.errorbar(np.arange(len(means)), means, [
-        #              means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
+        # plt.scatter(pX, pY, c=z, s=100, edgecolor='')
+        # plt.colorbar()
+        plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
+        plt.errorbar(np.arange(len(means)), means, [
+                     means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
         file_path = 'images/{}-{}.png'.format(d_type, u_type)
         fig.savefig(file_path, dpi=fig.dpi)
