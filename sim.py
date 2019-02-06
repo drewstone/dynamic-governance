@@ -130,6 +130,7 @@ class Simulator(object):
         title = "Throughput over {} simulation runs\n{} selection with {} utilities".format(self.num_times, d_type, u_type)
         plt.title(title)
         plt.scatter(pX, pY, c=z, s=100, edgecolor='')
+        plt.colorbar()
         # plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
         # plt.errorbar(np.arange(len(means)), means, [
         #              means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
