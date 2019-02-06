@@ -76,7 +76,7 @@ if __name__ == "__main__":
     agents = setup_agents(agent_options)
     initial_param = 1
     num_rounds = 5 * (int(np.ceil(np.log(30))) + 1)
-    num_times = 20
+    num_times = 100
     bounded_perc = 0.25
 
     decision_types = [

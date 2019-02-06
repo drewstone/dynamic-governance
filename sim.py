@@ -1,11 +1,14 @@
-import threading
-import numpy as np
-from gov import Government
 import statistics
-import logger
+import threading
+
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt  # noqa
+import numpy as np
+
+import logger
+from gov import Government
+from scipy.stats import gaussian_kde
 
 
 class Simulator(object):
@@ -100,10 +103,16 @@ class Simulator(object):
 
     def plot_chart(self, u_type, d_type):
         means, stds, maxes, mins = [], [], [], []
+        pX, pY = [], []
 
         # get statistics for each utility and decision type
         for i in range(self.num_rounds):
             history_key = "-".join([u_type, d_type, str(i)])
+
+            for p in self.history[history_key]:
+                pX.append(i)
+                pY.append(p)
+
             means.append(np.mean(self.history[history_key]))
             stds.append(np.std(self.history[history_key]))
             maxes.append(np.max(self.history[history_key]))
@@ -114,12 +123,15 @@ class Simulator(object):
         maxes = np.array(maxes)
         mins = np.array(mins)
 
+        xy = np.vstack([pX, pY])
+        z = gaussian_kde(xy)(xy)
+
         fig = plt.figure()
         title = "Throughput over {} simulation runs\n{} selection with {} utilities".format(self.num_times, d_type, u_type)
         plt.title(title)
-
-        plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
-        plt.errorbar(np.arange(len(means)), means, [
-                     means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
+        plt.scatter(pX, pY, c=z, s=100, edgecolor='')
+        # plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
+        # plt.errorbar(np.arange(len(means)), means, [
+        #              means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
         file_path = 'images/{}-{}.png'.format(d_type, u_type)
         fig.savefig(file_path, dpi=fig.dpi)
