@@ -1,3 +1,4 @@
+import threading
 import numpy as np
 from gov import Government
 import statistics
@@ -20,7 +21,7 @@ class Simulator(object):
         self.bounded_perc = options["bounded_percent"]
 
         # initialize government
-        self.dropout = True
+        self.dropout = False
         self.mine = True
 
     def start(self):
@@ -29,10 +30,13 @@ class Simulator(object):
 
         for u_type in self.utility_types:
             for d_type in self.decision_types:
-                for i in range(self.num_times):
-                    self.run(self.initial_param, u_type, d_type)
+                self.run_many_times(self.initial_param, u_type, d_type)
 
         self.plot_history()
+
+    def run_many_times(self, initial_param, u_type, d_type):
+        for _ in range(self.num_times):
+            self.run(self.initial_param, u_type, d_type)
 
     def run(self, initial_param, u_type, d_type):
         gov = Government({
@@ -89,57 +93,33 @@ class Simulator(object):
         return gov.advance_round(reports, hashes, leader)
 
     def plot_history(self):
-        means = {}
-        stds = {}
-        maxes = {}
-        mins = {}
-
-        # iterate over supported utility and decision types
+        threads = []
         for u_type in self.utility_types:
             for d_type in self.decision_types:
-                index_key = "-".join([u_type, d_type])
-                if index_key not in means:
-                    means[index_key] = []
-                if index_key not in stds:
-                    stds[index_key] = []
-                if index_key not in maxes:
-                    maxes[index_key] = []
-                if index_key not in mins:
-                    mins[index_key] = []
+                self.plot_chart(u_type, d_type)
 
-                # get statistics for each utility and decision type
-                fig = plt.figure()
-                for i in range(self.num_rounds):
-                    history_key = "-".join([u_type, d_type, str(i)])
+    def plot_chart(self, u_type, d_type):
+        means, stds, maxes, mins = [], [], [], []
 
-                    means[index_key].append(np.mean(self.history[history_key]))
-                    stds[index_key].append(np.std(self.history[history_key]))
-                    maxes[index_key].append(np.max(self.history[history_key]))
-                    mins[index_key].append(np.min(self.history[history_key]))
+        # get statistics for each utility and decision type
+        for i in range(self.num_rounds):
+            history_key = "-".join([u_type, d_type, str(i)])
+            means.append(np.mean(self.history[history_key]))
+            stds.append(np.std(self.history[history_key]))
+            maxes.append(np.max(self.history[history_key]))
+            mins.append(np.min(self.history[history_key]))
 
-                means[index_key] = np.array(means[index_key])
-                stds[index_key] = np.array(stds[index_key])
-                maxes[index_key] = np.array(maxes[index_key])
-                mins[index_key] = np.array(mins[index_key])
+        means = np.array(means)
+        stds = np.array(stds)
+        maxes = np.array(maxes)
+        mins = np.array(mins)
 
-                fig = plt.figure()
-                plt.title("Throughput over {} simulation runs\n"
-                          .format(self.num_times) +
-                          "{} selection with {} utilities"
-                          .format(d_type, u_type))
+        fig = plt.figure()
+        title = "Throughput over {} simulation runs\n{} selection with {} utilities".format(self.num_times, d_type, u_type)
+        plt.title(title)
 
-                # plt.plot(means)
-                plt.errorbar(np.arange(len(means[index_key])),
-                             means[index_key],
-                             stds[index_key],
-                             fmt='ok',
-                             lw=3)
-                plt.errorbar(np.arange(len(means[index_key])),
-                             means[index_key],
-                             [means[index_key] - mins[index_key],
-                                 maxes[index_key] - means[index_key]],
-                             fmt='.k',
-                             ecolor='gray',
-                             lw=1)
-                file_path = 'images/{}-{}.png'.format(d_type, u_type)
-                fig.savefig(file_path, dpi=fig.dpi)
+        plt.errorbar(np.arange(len(means)), means, stds, fmt='ok', lw=3)
+        plt.errorbar(np.arange(len(means)), means, [
+                     means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
+        file_path = 'images/{}-{}.png'.format(d_type, u_type)
+        fig.savefig(file_path, dpi=fig.dpi)

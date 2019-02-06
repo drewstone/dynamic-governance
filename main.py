@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from agent import Agent
 from errors import value_error
@@ -108,4 +109,7 @@ if __name__ == "__main__":
         "bounded_percent": bounded_perc,
     })
 
+
+    start_time = time.time()
     sim.start()
+    print("--- %s seconds ---" % (time.time() - start_time))
