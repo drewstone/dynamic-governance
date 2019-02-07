@@ -39,8 +39,8 @@ def increasing_node_capacities(n, start):
 
 def random_node_capacities(n, low, high):
     agents = []
-    caps = np.random.randint(low, high + 1, n)
-    hashes = np.random.randint(low, (high + 1) * 10, n)
+    caps = np.random.randint(low, (high + 1) * 10, n)
+    hashes = np.random.randint(low, (high + 1), n)
 
     for i in range(n):
         agents.append(agent.Agent(behavior_type,
@@ -140,11 +140,16 @@ def maximize_obj(reports):
 def get_agent_reports(agents):
     return list(map(lambda a: (a.capacity, a.hash_power), agents))
 
+def get_true_hp_sum(reports, capacity):
+    return sum([
+        reports[j][1] for j in range(len(reports)) if reports[j][0] >= capacity
+    ])
 
 # run simulation a bunch of times
 for t in range(100):
     # sample random node capacities
-    agents = random_node_capacities(100, 10, 100)
+    agents = random_node_capacities(10, 10, 100)
+    max_capacity_of_all_agents = max([ a.capacity for a in agents ])
     # agents = increasing_node_capacities(100, 10)
     # get reports from agents
     reports = get_agent_reports(agents)
@@ -162,7 +167,7 @@ for t in range(100):
             if a.capacity < max_cap[key]:
                 utility_of_agent = 0
             else:
-                utility_of_agent = a.capacity * (a.hash_power * 1.0 / hash_sum[key])
+                utility_of_agent = max_cap[key] * (a.hash_power * 1.0 / hash_sum[key])
 
             if a.capacity < max_cap[key] or a.capacity > max_cap[key]:
                 agents_copy = copy.deepcopy(agents)
@@ -177,15 +182,23 @@ for t in range(100):
                     if a.capacity < new_max_cap[key]:
                         utility_from_deviation = 0
                     else:
-                        utility_from_deviation = new_max_cap[key] * (a.hash_power * 1.0 / hp_sum[key])
+                        utility_from_deviation = new_max_cap[key] * (a.hash_power * 1.0 / get_true_hp_sum(reports, new_max_cap[key]))
 
-                    if utility_from_deviation > utility_of_agent:
-                        str = "KEY = {}, NEW_MAX_CAP = {}, AGENT = {}, DEVIATION = {}, OLD = {}"
-                        print(str.format(
-                            key, new_max_cap[key], a.capacity, new_capacity, max_cap[key]))
+                    if utility_from_deviation > utility_of_agent and new_max_cap[key] != max_cap[key]:
+                        str = "KEY = {}, NEW_MAX_CAP = {}, TRUE_CAP = {}, DEVIATION = {}, OLD_CAP = {}, NEW_U = {}, OLD_U = {}, NEW_SUM = {}, OLD_SUM = {}"
+                        print(str.format(key,
+                                         new_max_cap[key],
+                                         a.capacity,
+                                         new_capacity,
+                                         max_cap[key],
+                                         utility_from_deviation,
+                                         utility_of_agent,
+                                         hp_sum[key],
+                                         hash_sum[key],
+                                        ))
 
                 ctr = 1
-                while a.capacity + ctr < a.capacity + 10:
+                while a.capacity + ctr < max_capacity_of_all_agents:
                     new_capacity = a.capacity + ctr
                     agents_copy[inx].capacity = new_capacity
                     new_reports = get_agent_reports(agents_copy)
@@ -195,10 +208,16 @@ for t in range(100):
                     if a.capacity < new_max_cap[key]:
                         utility_from_deviation = 0
                     else:
-                        utility_from_deviation = new_max_cap[key] * (a.hash_power * 1.0 / hp_sum[key])
+                        utility_from_deviation = new_max_cap[key] * (a.hash_power * 1.0 / get_true_hp_sum(reports, new_max_cap[key]))
 
-                    if utility_from_deviation > utility_of_agent:
-                        str = "KEY = {}, NEW_MAX_CAP = {}, AGENT = {}, DEVIATION = {}, OLD = {}"
-                        print(str.format(
-                            key, new_max_cap[key], a.capacity, new_capacity, max_cap[key]))
+                    if utility_from_deviation > utility_of_agent and new_max_cap[key] != max_cap[key]:
+                        str = "KEY = {}, NEW_MAX_CAP = {}, TRUE_CAP = {}, DEVIATION = {}, OLD_CAP = {}, NEW_U = {}, OLD_U = {}"
+                        print(str.format(key,
+                                         new_max_cap[key],
+                                         a.capacity,
+                                         new_capacity,
+                                         max_cap[key],
+                                         utility_from_deviation,
+                                         utility_of_agent
+                                        ))
     print("")
