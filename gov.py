@@ -149,7 +149,6 @@ class Government(object):
         max_obj = 0
         for i in range(len(reports)):
             capacity = reports[i]
-            summed_hashpower = 0
             summed_hashpower = sum([
                 hashes[j] for j in range(len(reports)) if reports[j] >= capacity
             ])
