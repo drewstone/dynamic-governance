@@ -13,4 +13,4 @@ Some behavior we want to support:
 - Strategic behavior (agents submit values that maximize individual utility)
 - Byzantine/malicious behavior (agents submit random/malicious values)
 
-Overall, the question we want to ask is: How can we use adapative governance to optimize a distributed system. When there is a system designer (termed the "mechanism designer") with various goals, we want to optimize these goals given agent input. For a set of altruistic, rational/strategic, and even byzantine agents, we want to define a protocol that elicits informational reports to seed the mechanism designer's governance process.
+Overall, the question we want to ask is: How can we use adaptive governance to optimize a distributed system. When there is a system designer (termed the "mechanism designer") with various goals, we want to optimize these goals given agent input. For a set of altruistic, rational/strategic, and even byzantine agents, we want to define a protocol that elicits informational reports to seed the mechanism designer's governance process.
