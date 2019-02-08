@@ -1,6 +1,13 @@
 # dynamic-governance
 This repo contains a simulation environment for dynamic parameter adjustment over a multi-agent system. The goal of this project is to analyze the dynamics of a multi-agent system that attempts to adjust a system parameter that governs the throughput and decentralization of such a decentralized system.
 
+Some functions we support:
+- Median aggregation (lower/exact/upper medians)
+- Weighted median
+- Uniform and weighted leader elected selection
+- Balanced mechanisms
+- Monotonically-truthful balanced mechanisms
+
 Some behavior we want to support:
 - Honest behavior (agents submit truthful values)
 - Strategic behavior (agents submit values that maximize individual utility)
