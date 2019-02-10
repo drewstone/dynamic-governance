@@ -78,6 +78,7 @@ if __name__ == "__main__":
     num_rounds = 5 * (int(np.ceil(np.log(30))) + 1)
     num_times = 100
     bounded_perc = 0.25
+    suppress_perc = 0.33
 
     decision_types = [
         # constants.SOCIAL_WELFARE_MAXIMIZING,
@@ -85,9 +86,11 @@ if __name__ == "__main__":
         # constants.LOWER_MEDIAN_REPORT,
         # constants.UPPER_MEDIAN_REPORT,
         # constants.WEIGHTED_MEDIAN_REPORT,
-        constants.HASHPOWER_CAPACITY_MAXIMIZING,
-        constants.HASHPOWER_CAPSQUARED_MAXIMIZING,
-        constants.HASHPOWER_CAPSQRT_MAXIMIZING,
+        constants.SUPPRESSED_MEDIAN_REPORT,
+        constants.SUPPRESSED_WEIGHTED_MEDIAN_REPORT
+        # constants.HASHPOWER_CAPACITY_MAXIMIZING,
+        # constants.HASHPOWER_CAPSQUARED_MAXIMIZING,
+        # constants.HASHPOWER_CAPSQRT_MAXIMIZING,
         # constants.LEADER_REPORT,
         # constants.BOUNDED_LEADER_REPORT,
     ]
@@ -108,6 +111,7 @@ if __name__ == "__main__":
         "utility_types": utility_types,
         "logging_mode": logging_mode,
         "bounded_percent": bounded_perc,
+        "suppress_percent": suppress_perc,
     })
 
 

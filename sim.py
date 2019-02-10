@@ -1,6 +1,4 @@
 import statistics
-import threading
-
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt  # noqa
@@ -22,9 +20,10 @@ class Simulator(object):
         self.utility_types = options["utility_types"]
         self.decision_types = options["decision_types"]
         self.bounded_perc = options["bounded_percent"]
+        self.suppress_perc = options["suppress_percent"]
 
         # initialize government
-        self.dropout = False
+        self.dropout = True
         self.mine = True
 
     def start(self):
@@ -41,6 +40,7 @@ class Simulator(object):
                     "utility_type": u_type,
                     "decision_type": d_type,
                     "bounded_percent": self.bounded_perc,
+                    "suppress_percent": self.suppress_perc,
                 })
 
                 self.actives[key] = self.active

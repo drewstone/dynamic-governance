@@ -3,6 +3,7 @@ import vcg
 import constants
 from errors import value_error
 import statistics
+import copy
 
 
 class Government(object):
@@ -13,6 +14,7 @@ class Government(object):
         self.decision_type = options["decision_type"]
         self.utility_type = options["utility_type"]
         self.bounded_perc = options["bounded_percent"]
+        self.suppress_perc = options["suppress_percent"]
 
         self.prefix = "{}-{}".format(self.utility_type, self.decision_type)
 
@@ -48,6 +50,10 @@ class Government(object):
             return self.upper_median_vote(reports)
         elif self.decision_type == constants.WEIGHTED_MEDIAN_REPORT:
             return self.weighted_median_vote(reports, hashes)
+        elif self.decision_type == constants.SUPPRESSED_MEDIAN_REPORT:
+            return self.suppressed_median_vote(reports)
+        elif self.decision_type == constants.SUPPRESSED_WEIGHTED_MEDIAN_REPORT:
+            return self.suppressed_weighted_median_vote(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPACITY_MAXIMIZING:
             return self.hash_cap_selection(reports, hashes)
         elif self.decision_type == constants.HASHPOWER_CAPSQUARED_MAXIMIZING:
@@ -112,6 +118,61 @@ class Government(object):
         weights = [1.0 * i / weight_sum for i in hashes]
         w_median = int(statistics.wtd_median(reports, weights))
         return w_median, None
+
+    def suppressed_median_vote(self,reports):
+        median, _ = self.median_vote(reports)
+        if median > self.param:
+            # suppress from above
+            suppressed_reports = copy.deepcopy(reports)
+            while len(suppressed_reports) > self.bounded_perc * len(reports):
+                suppressed_reports = suppressed_reports[:-1]
+
+            s_median, _ = self.median_vote(suppressed_reports)
+            if s_median > self.param:
+                return s_median, None
+        elif median < self.param:
+            # suppress from above
+            suppressed_reports = copy.deepcopy(reports)
+            while len(suppressed_reports) > self.bounded_perc * len(reports):
+                suppressed_reports = suppressed_reports[1:]
+
+            s_median, _ = self.median_vote(suppressed_reports)
+            if s_median < self.param:
+                s_median, None
+
+        return self.param, None
+
+    def suppressed_weighted_median_vote(self, reports, hashes):
+        w_median, _ = self.weighted_median_vote(reports, hashes)
+        weight_sum = sum(hashes)
+        if w_median > self.param:
+            # suppress from above
+            suppressed_reports = copy.deepcopy(reports)
+            suppressed_hashes = copy.deepcopy(hashes)
+            hash_weight = weight_sum
+            while hash_weight > self.bounded_perc * weight_sum:
+                hash_weight -= suppressed_hashes[-1]
+                suppressed_reports = suppressed_reports[:-1]
+                suppressed_hashes = suppressed_hashes[:-1]
+
+            s_median, _ = self.weighted_median_vote(suppressed_reports, suppressed_hashes)
+            if s_median > self.param:
+                return s_median, None
+        elif w_median < self.param:
+            # suppress from below
+            suppressed_reports = copy.deepcopy(reports)
+            suppressed_hashes = copy.deepcopy(hashes)
+            hash_weight = weight_sum
+            while hash_weight > self.bounded_perc * weight_sum:
+                hash_weight -= suppressed_hashes[0]
+                suppressed_reports = suppressed_reports[1:]
+                suppressed_hashes = suppressed_hashes[1:]
+            
+            s_median, _ = self.weighted_median_vote(suppressed_reports, suppressed_hashes)
+            if s_median < self.param:
+                s_median, None
+
+        return self.param, None
 
     def hash_cap_selection(self, reports, hashes):
         max_cap = 0
