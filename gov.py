@@ -138,7 +138,7 @@ class Government(object):
 
             s_median, _ = self.median_vote(suppressed_reports)
             if s_median < self.param:
-                s_median, None
+                return s_median, None
 
         return self.param, None
 
@@ -170,7 +170,7 @@ class Government(object):
             
             s_median, _ = self.weighted_median_vote(suppressed_reports, suppressed_hashes)
             if s_median < self.param:
-                s_median, None
+                return s_median, None
 
         return self.param, None
 
