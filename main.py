@@ -98,6 +98,8 @@ if __name__ == "__main__":
         constants.LINEAR_UTILITY,
     ]
 
+    mutation_rule = constants.CYCLE_ONE_AGENT
+
     # logging_mode = constants.DEBUG_LOGGING
     logging_mode = None
     # logging_mode = constants.LOG_DROPOUT
@@ -112,6 +114,7 @@ if __name__ == "__main__":
         "logging_mode": logging_mode,
         "bounded_percent": bounded_perc,
         "suppress_percent": suppress_perc,
+        "mutation_rule": mutation_rule,
     })
 
 

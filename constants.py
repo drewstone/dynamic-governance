@@ -32,6 +32,13 @@ DIRECTIONAL_REPORT = 'directional'
 RANDOM_DIRECTIONAL_REPORT = 'random-directional'
 DIRECT_CAPACITY_REPORT = 'direct-capacity'
 
+# Mutation rules
+CYCLE_ONE_AGENT = 'cycle-one-agent'
+CYCLE_HALF_AGENTS = 'cycle-half-agents'
+CYCLE_QUARTER_AGENTS = 'cycle-quarter-agents'
+CYCLE_ALL_AGENTS = 'cycle-all-agents'
+CAPACITY_CYCLE = 'capacity-cycle'
+
 # Logging modes
 DEBUG_LOGGING = 'debug'
 MULTI_SIM_LOGGING = 'multi-sim'

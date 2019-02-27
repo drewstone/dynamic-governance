@@ -21,6 +21,7 @@ class Simulator(object):
         self.decision_types = options["decision_types"]
         self.bounded_perc = options["bounded_percent"]
         self.suppress_perc = options["suppress_percent"]
+        self.mutation_rule = options["mutation_rule"]
 
         # initialize government
         self.dropout = True
@@ -61,6 +62,8 @@ class Simulator(object):
         for u_type in self.utility_types:
             for d_type in self.decision_types:
                 self.run(self.govs["{}-{}".format(u_type, d_type)], leader, i)
+        
+        self.actives = self.mutate_active_agents()
 
     def run(self, gov, leader, round):
         if leader is None:
@@ -88,7 +91,21 @@ class Simulator(object):
         else:
             self.history[r_key] = [increment]
 
-        # if nodes dropout based on param selection
+        self.mutate_active_agents(gov)
+
+    def step(self, gov, leader, active, inactive):
+        # gather reports for current param
+        reports = list(map(lambda a: a.report(gov.param), active))
+        # gather hash power reports
+        hashes = list(map(lambda a: a.hash_power, active))
+        # advance round and receive new param given reports
+        return gov.advance_round(reports, hashes, leader)
+
+    def mutate_active_agents(self, gov):
+        if self.mutation_rule == "CYCLE_ONE_AGENT":
+            let rand_inx = np.random.choice(np.arange(0, len(self.actives[gov.prefix])))
+            return 
+        elif self.mutation_rule == "CAPACITY_CYCLE":
         if self.dropout:
             self.inactives[gov.prefix] = self.inactives[gov.prefix] + list(
                 filter(lambda a: a.capacity < param,
@@ -99,14 +116,9 @@ class Simulator(object):
 
             logger.dropout(self.logging_mode, self.actives[gov.prefix], self.inactives[gov.prefix])
             logger.payments(self.logging_mode, payments)
-
-    def step(self, gov, leader, active, inactive):
-        # gather reports for current param
-        reports = list(map(lambda a: a.report(gov.param), active))
-        # gather hash power reports
-        hashes = list(map(lambda a: a.hash_power, active))
-        # advance round and receive new param given reports
-        return gov.advance_round(reports, hashes, leader)
+        else:
+            return self.actives
+            
 
     def plot_history(self):
         for u_type in self.utility_types:
