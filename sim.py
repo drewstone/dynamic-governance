@@ -3,17 +3,17 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt  # noqa
 import numpy as np
-
+import agent
+import constants
 import logger
 from gov import Government
 from scipy.stats import gaussian_kde
-
 
 class Simulator(object):
     def __init__(self, options):
         super(Simulator, self).__init__()
         self.initial_param = options["initial_param"]
-        self.active = options["agents"]
+        self.agent_options = options["agent_options"]
         self.num_rounds = options["num_rounds"]
         self.num_times = options["num_times"]
         self.logging_mode = options["logging_mode"]
@@ -24,8 +24,9 @@ class Simulator(object):
         self.mutation_rule = options["mutation_rule"]
 
         # initialize government
-        self.dropout = True
         self.mine = True
+        # setup agents
+        self.active = agent.setup_agents(self.agent_options)
 
     def start(self):
         # initialize histories for plotting
@@ -54,20 +55,12 @@ class Simulator(object):
         self.plot_history()
 
     def run_round(self, i):
-        if not self.dropout:
-            leader = statistics.sample_by_hashpower(self.active)
-        else:
-            leader = None
-
         for u_type in self.utility_types:
             for d_type in self.decision_types:
-                self.run(self.govs["{}-{}".format(u_type, d_type)], leader, i)
-        
-        self.actives = self.mutate_active_agents()
+                self.run(self.govs["{}-{}".format(u_type, d_type)], i)
 
-    def run(self, gov, leader, round):
-        if leader is None:
-            leader = statistics.sample_by_hashpower(self.actives[gov.prefix])
+    def run(self, gov, round):
+        leader = statistics.sample_by_hashpower(self.actives[gov.prefix])
 
         t_key = "{}-throughput".format(gov.prefix)
         if t_key not in self.history:
@@ -77,7 +70,7 @@ class Simulator(object):
 
         r_key = "{}-{}".format(gov.prefix, round)
         logger.round(self.logging_mode, round, gov, self.history[t_key])
-        param, payments = self.step(gov, leader, self.actives[gov.prefix], self.inactives[gov.prefix])
+        param = self.step(gov, leader, self.actives[gov.prefix], self.inactives[gov.prefix])
         # increment throughput based on leader election
         if leader.capacity < param:
             increment = 0
@@ -91,27 +84,29 @@ class Simulator(object):
         else:
             self.history[r_key] = [increment]
 
-        self.mutate_active_agents(gov)
-
     def step(self, gov, leader, active, inactive):
         # gather reports for current param
         reports = list(map(lambda a: a.report(gov.param), active))
         # gather hash power reports
         hashes = list(map(lambda a: a.hash_power, active))
         # advance round and receive new param given reports
-        return gov.advance_round(reports, hashes, leader)
+        param, payments =  gov.advance_round(reports, hashes, leader)
+        # mutate agents after gov has advanced round
+        self.mutate_active_agents(gov, payments)
+        return param
 
-    def mutate_active_agents(self, gov):
-        if self.mutation_rule == "CYCLE_ONE_AGENT":
-            let rand_inx = np.random.choice(np.arange(0, len(self.actives[gov.prefix])))
-            return 
-        elif self.mutation_rule == "CAPACITY_CYCLE":
-        if self.dropout:
+    def mutate_active_agents(self, gov, payments):
+        if self.mutation_rule == constants.CYCLE_ONE_AGENT:
+            rand_inx = np.random.choice(np.arange(0, len(self.actives[gov.prefix])))
+            mutate_options = self.agent_options.copy()
+            mutate_options.update({ "num_agents": 1 })
+            self.actives[gov.prefix][rand_inx] = agent.setup_agents(mutate_options)[0]
+        elif self.mutation_rule == constants.CAPACITY_CYCLE:
             self.inactives[gov.prefix] = self.inactives[gov.prefix] + list(
-                filter(lambda a: a.capacity < param,
+                filter(lambda a: a.capacity < gov.param,
                         self.actives[gov.prefix]))
             self.actives[gov.prefix] = list(
-                filter(lambda a: a.capacity >= param,
+                filter(lambda a: a.capacity >= gov.param,
                         self.actives[gov.prefix]))
 
             logger.dropout(self.logging_mode, self.actives[gov.prefix], self.inactives[gov.prefix])

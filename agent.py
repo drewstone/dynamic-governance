@@ -3,6 +3,63 @@ import constants
 from errors import value_error
 
 
+def increasing_node_capacities(n, start, report_type):
+    agents = []
+    caps = sorted(np.arange(start, start + n))
+    hashes = np.arange(start, start + n)
+
+    for i in range(n):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            report_type))
+    return agents
+
+
+def random_node_capacities(n, low, high, report_type):
+    agents = []
+    caps = sorted(np.random.randint(low, high + 1, n))
+    hashes = np.random.randint(low, high + 1, n)
+
+    for i in range(n):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            report_type))
+    return agents
+
+
+def explicit_honest_agents(caps, hashes, report_type):
+    agents = []
+
+    for i in range(len(caps)):
+        agents.append(Agent(constants.HONEST_AGENT,
+                            caps[i],
+                            hashes[i],
+                            constants.DIRECT_CAPACITY_REPORT))
+    return agents
+
+
+def setup_agents(options):
+    if len(options["capacities"]) > 0 and len(options["hashes"]) > 0:
+        return explicit_honest_agents(options["capacities"],
+                                      options["hashes"],
+                                      options["report_type"])
+
+    if options["agent_mode"] == constants.HONEST_INCREASING_AGENTS:
+        return increasing_node_capacities(options["num_agents"],
+                                          options["low_capacity"],
+                                          options["report_type"])
+
+    if options["agent_mode"] == constants.HONEST_RANDOM_AGENTS:
+        return random_node_capacities(options["num_agents"],
+                                      options["low_capacity"],
+                                      options["high_capacity"],
+                                      options["report_type"])
+
+    value_error("Unsupported agent type: {}", options["agent_mode"])
+
+
 class Agent(object):
     """An agent represents an atomic participant in a governance simulation"""
 
