@@ -15,6 +15,7 @@ class Government(object):
         self.utility_type = options["utility_type"]
         self.bounded_perc = options["bounded_percent"]
         self.suppress_perc = options["suppress_percent"]
+        self.options = options
 
         self.prefix = "{}-{}".format(self.utility_type, self.decision_type)
 
@@ -25,6 +26,11 @@ class Government(object):
             self.VCG = vcg.VCGMechanism(self.utility_type)
 
         self.round = 0
+
+    def reset(self):
+        self.round = 0
+        self.prev_param = None
+        self.param = self.options["initial_param"]
 
     def advance_round(self, reports, hashes, leader):
         self.prev_param = self.param

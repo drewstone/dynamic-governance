@@ -29,8 +29,6 @@ class Simulator(object):
         self.active = agent.setup_agents(self.agent_options)
 
     def start(self):
-        # initialize histories for plotting
-        self.history = {}
         self.govs = {}
         self.actives = {}
         self.inactives = {}
@@ -48,28 +46,32 @@ class Simulator(object):
                 self.actives[key] = self.active
                 self.inactives[key] = list()
 
-        for _ in range(self.num_times):
+        # initialize histories for plotting
+        self.total_history = {}
+        for execution_number in range(self.num_times):
+            self.history = {}
             for i in range(self.num_rounds):
-                self.run_round(i)
+                for u_type in self.utility_types:
+                    for d_type in self.decision_types:
+                        sim_type = "{}-{}".format(u_type, d_type)
+                        if i == 0:
+                            self.history[sim_type] = {}
+                            self.govs[sim_type].reset()
+                        self.run(self.govs[sim_type])
 
-        self.plot_history()
+            self.total_history[execution_number] = self.history
 
-    def run_round(self, i):
-        for u_type in self.utility_types:
-            for d_type in self.decision_types:
-                self.run(self.govs["{}-{}".format(u_type, d_type)], i)
+        self.gather_statistics()
 
-    def run(self, gov, round):
+    def run(self, gov):
         leader = statistics.sample_by_hashpower(self.actives[gov.prefix])
 
-        t_key = "{}-throughput".format(gov.prefix)
-        if t_key not in self.history:
-            self.history[t_key] = 0
+        if "throughput" not in self.history[gov.prefix]:
+            self.history[gov.prefix]["throughput"] = 0.0
 
         logger.init(self.logging_mode, gov, self.actives[gov.prefix])
 
-        r_key = "{}-{}".format(gov.prefix, round)
-        logger.round(self.logging_mode, round, gov, self.history[t_key])
+        # logger.round(self.logging_mode, execution_number, gov, self.history[t_key])
         param = self.step(gov, leader, self.actives[gov.prefix], self.inactives[gov.prefix])
         # increment throughput based on leader election
         if leader.capacity < param:
@@ -77,12 +79,12 @@ class Simulator(object):
         else:
             increment = param
 
-        self.history[t_key] += increment
+        self.history[gov.prefix]["throughput"] += increment
 
-        if r_key in self.history:
-            self.history[r_key].append(increment)
+        if "pts" in self.history[gov.prefix]:
+            self.history[gov.prefix]["pts"].append(increment)
         else:
-            self.history[r_key] = [increment]
+            self.history[gov.prefix]["pts"] = [increment]
 
     def step(self, gov, leader, active, inactive):
         # gather reports for current param
@@ -113,35 +115,49 @@ class Simulator(object):
             logger.payments(self.logging_mode, payments)
         else:
             return self.actives
-            
 
-    def plot_history(self):
+    def gather_statistics(self):
+        for execution_number in range(self.num_times):
+            for u_type in self.utility_types:
+                for d_type in self.decision_types:
+                    sim_type = "{}-{}".format(u_type, d_type)
+                    if "means" not in self.total_history[execution_number][sim_type]:
+                        self.total_history[execution_number][sim_type].update({
+                            "means": [],
+                            "stds": [],
+                            "maxes": [],
+                            "mins": [],
+                        });
+
+                    self.total_history[execution_number][sim_type]["means"].append(np.mean(self.total_history[execution_number][sim_type]["pts"]))
+                    self.total_history[execution_number][sim_type]["stds"].append(np.std(self.total_history[execution_number][sim_type]["pts"]))
+                    self.total_history[execution_number][sim_type]["maxes"].append(np.max(self.total_history[execution_number][sim_type]["pts"]))
+                    self.total_history[execution_number][sim_type]["mins"].append(np.min(self.total_history[execution_number][sim_type]["pts"]))
+
+                    # self.plot_chart(u_type, d_type)
+                    self.total_history[execution_number][sim_type]["pts"] = np.array(self.total_history[execution_number][sim_type]["pts"])
+                    self.total_history[execution_number][sim_type]["means"] = np.array(self.total_history[execution_number][sim_type]["means"])
+                    self.total_history[execution_number][sim_type]["stds"] = np.array(self.total_history[execution_number][sim_type]["stds"])
+                    self.total_history[execution_number][sim_type]["maxes"] = np.array(self.total_history[execution_number][sim_type]["maxes"])
+                    self.total_history[execution_number][sim_type]["mins"] = np.array(self.total_history[execution_number][sim_type]["mins"])
+                    print("Execution Num: {}, Throughput: {}, Type: {}".format(
+                        execution_number + 1, self.total_history[execution_number][sim_type]["throughput"], sim_type))
+
+                    if sim_type not in self.total_history:
+                        self.total_history[sim_type] = {}
+
+                    if "mean_throughput" not in self.total_history[sim_type]:
+                        self.total_history[sim_type]["mean_throughput"] = self.total_history[execution_number][sim_type]["throughput"] * 1.0
+                    else:
+                        fractional_term = (self.total_history[execution_number][sim_type]["throughput"] * 1.0 - self.total_history[sim_type]["mean_throughput"]) /(execution_number + 1)
+                        self.total_history[sim_type]["mean_throughput"] = self.total_history[sim_type]["mean_throughput"] + (fractional_term)
+
         for u_type in self.utility_types:
             for d_type in self.decision_types:
-                self.plot_chart(u_type, d_type)
+                sim_type = "{}-{}".format(u_type, d_type)
+                print("Mean throughput: {}, Type: {}".format(self.total_history[sim_type]["mean_throughput"], sim_type))
 
     def plot_chart(self, u_type, d_type):
-        means, stds, maxes, mins = [], [], [], []
-        pX, pY = [], []
-
-        # get statistics for each utility and decision type
-        for i in range(self.num_rounds):
-            history_key = "-".join([u_type, d_type, str(i)])
-
-            for p in self.history[history_key]:
-                pX.append(i)
-                pY.append(p)
-
-            means.append(np.mean(self.history[history_key]))
-            stds.append(np.std(self.history[history_key]))
-            maxes.append(np.max(self.history[history_key]))
-            mins.append(np.min(self.history[history_key]))
-
-        means = np.array(means)
-        stds = np.array(stds)
-        maxes = np.array(maxes)
-        mins = np.array(mins)
-
         # xy = np.vstack([pX, pY])
         # z = gaussian_kde(xy)(xy)
 
