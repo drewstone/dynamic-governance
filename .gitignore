@@ -32,6 +32,8 @@
 /images/*.jpg
 /images/*.jpeg
 
+.DS_STORE
+
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
 *.bbl
 *.bcf
